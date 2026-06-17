@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>말의 왕국을 구하라 – 40분 수업판</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0a0814;--panel:#13102a;--panel2:#1a1640;
+  --border:#2a2250;--border2:#3a3070;
+  --purple:#9b5de5;--pink:#f72585;--cyan:#00f5d4;
+  --yellow:#ffd166;--red:#ef233c;--green:#06d6a0;
+  --text:#e8e0ff;--muted:#7a70aa;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ── STARS ── */
+#stars-bg{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.star{position:absolute;border-radius:50%;animation:twinkle var(--d,3s) infinite var(--dl,0s);}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:1}}
+
+/* ── TITLE ── */
+#title-screen{
+  align-items:center;justify-content:center;text-align:center;
+  background:radial-gradient(ellipse at 50% 25%,#2a0d60 0%,var(--bg) 65%);
+  position:relative;padding:2rem;
+}
+.title-castle{font-size:5rem;animation:float 3.5s ease-in-out infinite;position:relative;z-index:1;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.title-logo{
+  font-size:2.6rem;font-weight:900;line-height:1.15;margin:.6rem 0;
+  background:linear-gradient(130deg,#c77dff,#ff6b9d,#ffd166);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  position:relative;z-index:1;
+}
+.title-badge{
+  display:inline-block;background:rgba(155,93,229,.18);border:1px solid rgba(155,93,229,.4);
+  color:var(--purple);font-size:.75rem;font-weight:700;letter-spacing:.1em;
+  padding:.3rem .9rem;border-radius:20px;margin-bottom:1.5rem;position:relative;z-index:1;
+}
+.btn-row{display:flex;flex-direction:column;gap:.7rem;position:relative;z-index:1;}
+.btn{
+  display:inline-block;padding:.8rem 2rem;border-radius:50px;
+  font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .18s;
+}
+.btn-primary{background:linear-gradient(135deg,#9b5de5,#5c1fa8);color:#fff;box-shadow:0 4px 20px rgba(155,93,229,.45);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(155,93,229,.65);}
+.btn-outline{background:transparent;color:var(--muted);border:1.5px solid var(--border2);}
+.btn-outline:hover{border-color:var(--purple);color:var(--purple);}
+.btn-danger{background:linear-gradient(135deg,#ef233c,#a4001c);color:#fff;}
+.btn-green{background:linear-gradient(135deg,#06d6a0,#028c68);color:#0a0814;}
+.btn-yellow{background:linear-gradient(135deg,#ffd166,#c89a00);color:#0a0814;}
+
+/* ── NAME ENTRY ── */
+#name-screen{align-items:center;justify-content:center;padding:2rem;text-align:center;}
+.name-card{background:var(--panel);border:1px solid var(--border2);border-radius:20px;padding:2.5rem;max-width:420px;width:100%;}
+.name-title{font-size:1.5rem;font-weight:900;margin-bottom:.4rem;}
+.name-sub{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem;}
+.name-input{
+  width:100%;background:var(--panel2);border:1.5px solid var(--border2);border-radius:12px;
+  color:var(--text);font-size:1.1rem;font-family:inherit;font-weight:700;
+  padding:.8rem 1rem;text-align:center;outline:none;margin-bottom:1rem;
+  transition:border-color .2s;
+}
+.name-input:focus{border-color:var(--purple);}
+
+/* ── HUD ── */
+.hud{
+  background:var(--panel);border-bottom:1px solid var(--border);
+  padding:.6rem 1.2rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;
+  position:sticky;top:0;z-index:10;
+}
+.hud-name{font-weight:900;font-size:.95rem;color:var(--yellow);}
+.hud-stage{font-size:.75rem;color:var(--muted);flex:1;}
+.hud-hp{display:flex;align-items:center;gap:.3rem;font-size:.85rem;}
+.hud-score{background:#2a2250;padding:.25rem .7rem;border-radius:16px;font-size:.8rem;font-weight:700;color:var(--yellow);}
+.progress-row{display:flex;gap:.3rem;}
+.pdot{width:9px;height:9px;border-radius:50%;background:var(--border2);transition:background .3s;}
+.pdot.done{background:var(--purple);}
+.pdot.current{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+
+/* ── GAME SCREEN ── */
+#game-screen{flex-direction:column;}
+.game-body{flex:1;max-width:760px;width:100%;margin:0 auto;padding:1.2rem;display:flex;flex-direction:column;gap:1rem;}
+
+/* Story */
+.story-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.story-top{
+  background:linear-gradient(135deg,#160d35,#0d0a20);
+  padding:1rem 1.2rem;display:flex;gap:.9rem;align-items:flex-start;
+  border-bottom:1px solid var(--border);
+}
+.s-avatar{font-size:2.6rem;flex-shrink:0;animation:float 3.5s ease-in-out infinite;}
+.s-speaker{font-size:.7rem;font-weight:700;color:var(--purple);letter-spacing:.08em;margin-bottom:.3rem;}
+.s-text{font-size:.9rem;line-height:1.7;white-space:pre-wrap;}
+.mission-body{padding:1rem 1.2rem;}
+.mission-tag{
+  display:inline-block;background:rgba(155,93,229,.2);color:var(--purple);
+  font-size:.68rem;font-weight:700;letter-spacing:.1em;padding:.18rem .6rem;border-radius:4px;margin-bottom:.5rem;
+}
+.mission-q{font-size:1rem;font-weight:700;line-height:1.55;margin-bottom:.3rem;white-space:pre-wrap;}
+.mission-hint{font-size:.78rem;color:var(--muted);}
+
+/* Choices */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.choice{
+  background:var(--panel);border:1.5px solid var(--border2);border-radius:12px;
+  padding:.75rem .9rem;text-align:left;cursor:pointer;
+  font-family:inherit;font-size:.88rem;color:var(--text);
+  display:flex;align-items:center;gap:.55rem;transition:all .15s;
+}
+.choice:hover:not(:disabled){border-color:var(--purple);background:rgba(155,93,229,.1);transform:translateY(-1px);}
+.choice.correct{border-color:var(--green);background:rgba(6,214,160,.12);color:var(--green);}
+.choice.wrong{border-color:var(--red);background:rgba(239,35,60,.1);color:#ff8099;}
+.choice:disabled{cursor:not-allowed;}
+.cnum{width:22px;height:22px;background:var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+
+/* Feedback */
+.feedback{border-radius:12px;padding:.9rem 1.1rem;font-size:.88rem;line-height:1.6;display:none;}
+.feedback.ok{background:rgba(6,214,160,.1);border:1px solid rgba(6,214,160,.3);color:var(--green);}
+.feedback.ng{background:rgba(239,35,60,.07);border:1px solid rgba(239,35,60,.25);color:#ff8099;}
+.fb-title{font-weight:700;margin-bottom:.3rem;}
+.next-row{text-align:center;}
+
+/* ── BOSS SCREEN ── */
+#boss-screen{flex-direction:column;align-items:center;justify-content:flex-start;padding:1.2rem;}
+.boss-wrap{max-width:700px;width:100%;display:flex;flex-direction:column;gap:1rem;}
+.boss-header{text-align:center;}
+.boss-label{font-size:.75rem;font-weight:700;color:var(--pink);letter-spacing:.12em;margin-bottom:.3rem;}
+.boss-name{font-size:1.8rem;font-weight:900;}
+/* Boss HP */
+.boss-hp-row{display:flex;align-items:center;gap:.6rem;}
+.boss-hp-bar{flex:1;height:18px;background:#2a1030;border-radius:9px;overflow:hidden;border:1px solid #5a1050;}
+.boss-hp-fill{height:100%;background:linear-gradient(90deg,#ff2060,#ff6b9d);border-radius:9px;transition:width .5s ease;}
+.boss-hp-text{font-size:.8rem;font-weight:700;color:var(--pink);min-width:60px;text-align:right;}
+/* Boss Arena */
+.boss-arena{
+  background:linear-gradient(160deg,#1a0030,#0a0020);
+  border:2px solid #3a0060;border-radius:20px;
+  padding:1.5rem;text-align:center;position:relative;overflow:hidden;
+}
+.boss-fig{font-size:6rem;line-height:1;transition:transform .15s;position:relative;z-index:1;}
+.boss-fig.hit{animation:bossHit .4s ease;}
+@keyframes bossHit{0%{filter:brightness(3) saturate(0)}30%{transform:translateX(12px)}60%{transform:translateX(-8px)}100%{filter:brightness(1) saturate(1);transform:translateX(0)}}
+.boss-fig.dead{animation:bossDead .8s ease forwards;}
+@keyframes bossDead{0%{transform:scale(1)}40%{transform:scale(1.3) rotate(-10deg)}100%{transform:scale(0) rotate(30deg);opacity:0}}
+.boss-status{font-size:.95rem;color:var(--pink);font-weight:700;margin-top:.5rem;min-height:1.4em;}
+.damage-pop{
+  position:absolute;top:20%;left:50%;transform:translateX(-50%);
+  font-size:2rem;font-weight:900;color:var(--yellow);pointer-events:none;
+  animation:popUp .7s ease forwards;z-index:5;
+}
+@keyframes popUp{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-60px)}}
+/* Boss Q */
+.boss-qcard{background:var(--panel);border:1px solid var(--border2);border-radius:16px;padding:1.1rem 1.2rem;}
+.boss-qtag{display:inline-block;background:rgba(247,37,133,.2);color:var(--pink);font-size:.68rem;font-weight:700;letter-spacing:.1em;padding:.18rem .6rem;border-radius:4px;margin-bottom:.5rem;}
+.boss-q{font-size:1rem;font-weight:700;line-height:1.55;margin-bottom:.3rem;white-space:pre-wrap;}
+.boss-choices{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.boss-choice{
+  background:var(--panel2);border:1.5px solid var(--border2);border-radius:12px;
+  padding:.75rem .9rem;text-align:left;cursor:pointer;
+  font-family:inherit;font-size:.88rem;color:var(--text);
+  display:flex;align-items:center;gap:.55rem;transition:all .15s;
+}
+.boss-choice:hover:not(:disabled){border-color:var(--pink);background:rgba(247,37,133,.1);}
+.boss-choice.correct{border-color:var(--green);background:rgba(6,214,160,.12);color:var(--green);}
+.boss-choice.wrong{border-color:var(--red);background:rgba(239,35,60,.1);color:#ff8099;}
+.boss-choice:disabled{cursor:not-allowed;}
+.boss-feedback{border-radius:12px;padding:.8rem 1rem;font-size:.85rem;line-height:1.6;display:none;margin-top:.5rem;}
+.boss-feedback.ok{background:rgba(6,214,160,.1);border:1px solid rgba(6,214,160,.3);color:var(--green);}
+.boss-feedback.ng{background:rgba(239,35,60,.07);border:1px solid rgba(239,35,60,.25);color:#ff8099;}
+.boss-next-row{text-align:center;}
+
+/* ── RANKING SCREEN ── */
+#rank-screen{align-items:center;padding:1.5rem;}
+.rank-wrap{max-width:600px;width:100%;}
+.rank-header{text-align:center;margin-bottom:1.5rem;}
+.rank-trophy{font-size:3.5rem;animation:float 3s ease-in-out infinite;}
+.rank-title{font-size:2rem;font-weight:900;background:linear-gradient(135deg,#ffd166,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.rank-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem;}
+.rank-item{
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:.9rem 1.2rem;display:flex;align-items:center;gap:1rem;
+  transition:transform .2s;
+}
+.rank-item.rank-1{border-color:var(--yellow);background:linear-gradient(90deg,rgba(255,209,102,.12),var(--panel));}
+.rank-item.rank-2{border-color:#c0c0c0;background:linear-gradient(90deg,rgba(192,192,192,.08),var(--panel));}
+.rank-item.rank-3{border-color:#cd7f32;background:linear-gradient(90deg,rgba(205,127,50,.08),var(--panel));}
+.rank-pos{font-size:1.4rem;font-weight:900;width:36px;text-align:center;flex-shrink:0;}
+.rank-avatar{font-size:1.8rem;flex-shrink:0;}
+.rank-info{flex:1;}
+.rank-pname{font-weight:700;font-size:1rem;}
+.rank-grade{font-size:.75rem;color:var(--muted);margin-top:.1rem;}
+.rank-pts{font-size:1.3rem;font-weight:900;color:var(--yellow);}
+.rank-empty{text-align:center;color:var(--muted);padding:3rem;font-size:.9rem;}
+
+/* ── ENDING ── */
+#ending-screen{align-items:center;justify-content:center;text-align:center;padding:2rem;
+  background:radial-gradient(ellipse at 50% 30%,#1f0a50,var(--bg));}
+.end-emoji{font-size:5rem;animation:float 3s ease-in-out infinite;margin-bottom:1rem;}
+.end-title{font-size:2.2rem;font-weight:900;background:linear-gradient(135deg,#ffd166,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.4rem;}
+.end-sub{color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:1.5rem;white-space:pre-wrap;}
+.end-score-box{background:var(--panel);border:1px solid var(--border2);border-radius:18px;padding:1.5rem 2rem;display:inline-block;margin-bottom:1.5rem;}
+.end-score-big{font-size:3rem;font-weight:900;color:var(--yellow);}
+.end-score-label{font-size:.8rem;color:var(--muted);margin-top:.2rem;}
+.end-badge{display:inline-block;padding:.35rem 1.1rem;border-radius:20px;font-weight:700;font-size:.95rem;margin-top:.7rem;}
+.end-row{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;}
+
+/* DICT */
+#dict-screen{padding:1.5rem;max-width:800px;margin:0 auto;width:100%;}
+.dict-title{font-size:1.4rem;font-weight:900;margin-bottom:1.2rem;}
+.dict-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.7rem;margin-bottom:1.5rem;}
+.dcard{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:.9rem;}
+.dcard-icon{font-size:1.6rem;margin-bottom:.4rem;}
+.dcard-name{font-weight:700;color:var(--purple);margin-bottom:.2rem;font-size:.95rem;}
+.dcard-desc{font-size:.77rem;color:var(--muted);line-height:1.5;}
+.dcard-ex{font-size:.77rem;color:var(--text);margin-top:.3rem;}
+
+@media(max-width:560px){
+  .title-logo{font-size:1.9rem;}
+  .choices,.boss-choices{grid-template-columns:1fr;}
+  .boss-fig{font-size:4rem;}
+  .rank-pts{font-size:1rem;}
+}
+
+/* Timer badge */
+.timer-badge{
+  display:inline-flex;align-items:center;gap:.3rem;
+  background:#2a1a00;border:1px solid #5a3a00;
+  color:var(--yellow);font-size:.8rem;font-weight:700;
+  padding:.25rem .7rem;border-radius:16px;
+}
+.timer-badge.urgent{background:#2a0010;border-color:#5a0020;color:var(--pink);animation:pulse .7s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+
+<div id="stars-bg"></div>
+
+<!-- ══ TITLE ══ -->
+<div id="title-screen" class="screen active">
+  <div class="title-castle">🏰</div>
+  <div class="title-logo">말의 왕국을<br>구하라!</div>
+  <div class="title-badge">⏱ 40분 수업 · 9품사 RPG · 중학교 1학년</div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="goName()">⚔️ 모험 시작</button>
+    <button class="btn btn-outline" onclick="showRankFromTitle()">🏆 명예의 전당</button>
+    <button class="btn btn-outline" onclick="showDictScreen()">📚 9품사 사전</button>
+  </div>
+  <div style="margin-top:1.5rem;font-size:.75rem;color:var(--muted);position:relative;z-index:1;">
+    9스테이지 → 보스전 3라운드 → 최종 랭킹
+  </div>
+</div>
+
+<!-- ══ NAME ══ -->
+<div id="name-screen" class="screen">
+  <div class="name-card">
+    <div style="font-size:3rem;margin-bottom:.5rem;">🧙</div>
+    <div class="name-title">모험가 이름을 입력하세요</div>
+    <div class="name-sub">이름은 최종 랭킹에 표시됩니다</div>
+    <input class="name-input" id="player-name-input" maxlength="10" placeholder="이름 입력" onkeydown="if(event.key==='Enter')startGame()">
+    <button class="btn btn-primary" style="width:100%" onclick="startGame()">🚀 출발!</button>
+    <button class="btn btn-outline" style="width:100%;margin-top:.5rem" onclick="showTitle()">← 돌아가기</button>
+  </div>
+</div>
+
+<!-- ══ DICT ══ -->
+<div id="dict-screen" class="screen">
+  <div class="dict-title">📚 9품사 사전</div>
+  <div class="dict-grid" id="dict-grid"></div>
+  <button class="btn btn-outline" onclick="showTitle()">← 돌아가기</button>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="game-screen" class="screen">
+  <div class="hud">
+    <div class="hud-name" id="hud-name">플레이어</div>
+    <div class="progress-row" id="progress-row"></div>
+    <div class="hud-stage" id="hud-stage"></div>
+    <div class="hud-hp" id="hud-hp">❤️❤️❤️</div>
+    <div class="timer-badge" id="timer-badge">⏱ --:--</div>
+    <div class="hud-score">⭐<span id="score-disp">0</span></div>
+  </div>
+  <div class="game-body">
+    <div class="story-card">
+      <div class="story-top">
+        <div class="s-avatar" id="s-avatar">🚪</div>
+        <div>
+          <div class="s-speaker" id="s-speaker">?</div>
+          <div class="s-text" id="s-text">로딩 중...</div>
+        </div>
+      </div>
+      <div class="mission-body">
+        <div class="mission-tag">📋 MISSION</div>
+        <div class="mission-q" id="mission-q"></div>
+        <div class="mission-hint" id="mission-hint"></div>
+      </div>
+    </div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback">
+      <div class="fb-title" id="fb-title"></div>
+      <div id="fb-body"></div>
+    </div>
+    <div class="next-row" id="next-row" style="display:none">
+      <button class="btn btn-primary" onclick="nextStage()">다음 미션 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOSS ══ -->
+<div id="boss-screen" class="screen">
+  <div class="hud">
+    <div class="hud-name" id="boss-hud-name">플레이어</div>
+    <div class="hud-hp" id="boss-hud-hp">❤️❤️❤️</div>
+    <div class="timer-badge" id="boss-timer-badge">⏱ --:--</div>
+    <div class="hud-score">⭐<span id="boss-score-disp">0</span></div>
+  </div>
+  <div class="boss-wrap">
+    <div class="boss-header">
+      <div class="boss-label" id="boss-label">BOSS BATTLE</div>
+      <div class="boss-name" id="boss-name">어둠의 대마왕</div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
+        <span style="font-size:.8rem;color:var(--pink);font-weight:700;">👹 BOSS HP</span>
+        <span class="boss-hp-text" id="boss-hp-text">15 / 15</span>
+      </div>
+      <div class="boss-hp-bar"><div class="boss-hp-fill" id="boss-hp-fill" style="width:100%"></div></div>
+    </div>
+    <div class="boss-arena">
+      <div class="boss-fig" id="boss-fig">👹</div>
+      <div class="boss-status" id="boss-status">도전자를 기다리고 있다...</div>
+    </div>
+    <div class="boss-qcard">
+      <div class="boss-qtag">⚔️ 공격 찬스</div>
+      <div class="boss-q" id="boss-q">문제 로딩 중...</div>
+      <div class="boss-choices" id="boss-choices"></div>
+      <div class="boss-feedback" id="boss-feedback">
+        <div class="fb-title" id="boss-fb-title"></div>
+        <div id="boss-fb-body"></div>
+      </div>
+    </div>
+    <div class="boss-next-row" id="boss-next-row" style="display:none">
+      <button class="btn btn-primary" onclick="nextBossQ()" id="boss-next-btn">다음 공격 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ENDING ══ -->
+<div id="ending-screen" class="screen">
+  <div class="end-emoji" id="end-emoji">🏆</div>
+  <div class="end-title" id="end-title">말의 왕국을 구했다!</div>
+  <div class="end-sub" id="end-sub"></div>
+  <div class="end-score-box">
+    <div class="end-score-big" id="end-score-big">0점</div>
+    <div class="end-score-label">총 점수 (스테이지 + 보스전)</div>
+    <div class="end-badge" id="end-badge">🥇 언어 대마법사</div>
+  </div>
+  <div class="end-row">
+    <button class="btn btn-primary" onclick="goRanking()">🏆 랭킹 보기</button>
+    <button class="btn btn-outline" onclick="restartGame()">🔄 다시 도전</button>
+    <button class="btn btn-outline" onclick="showTitle()">🏠 처음으로</button>
+  </div>
+</div>
+
+<!-- ══ RANKING ══ -->
+<div id="rank-screen" class="screen">
+  <div class="rank-wrap">
+    <div class="rank-header">
+      <div class="rank-trophy">🏆</div>
+      <div class="rank-title">명예의 전당</div>
+      <div style="color:var(--muted);font-size:.82rem;margin-top:.3rem;">우리 반 최고 모험가</div>
+    </div>
+    <div class="rank-list" id="rank-list"></div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;">
+      <button class="btn btn-outline" onclick="clearRanking()">🗑️ 랭킹 초기화</button>
+      <button class="btn btn-outline" onclick="showTitle()">🏠 처음으로</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════
+const DICT_DATA = [
+  {icon:'🏷️',name:'명사',en:'Noun',desc:'사람·사물·장소·개념의 이름',ex:'하늘, 학교, 사랑, 강아지'},
+  {icon:'👉',name:'대명사',en:'Pronoun',desc:'명사를 대신해 가리키는 말',ex:'나, 너, 우리, 이것, 저기'},
+  {icon:'🔢',name:'수사',en:'Numeral',desc:'수량이나 순서를 나타내는 말',ex:'하나, 둘, 첫째, 셋'},
+  {icon:'🎬',name:'동사',en:'Verb',desc:'움직임·작용을 나타내는 말',ex:'먹다, 달리다, 웃다'},
+  {icon:'✨',name:'형용사',en:'Adjective',desc:'성질·상태를 나타내는 말',ex:'예쁘다, 크다, 행복하다'},
+  {icon:'🔧',name:'관형사',en:'Determiner',desc:'체언 앞에서 꾸며주는 말',ex:'새, 헌, 모든, 이, 그'},
+  {icon:'📢',name:'부사',en:'Adverb',desc:'용언이나 다른 말을 꾸미는 말',ex:'매우, 빨리, 천천히, 아마'},
+  {icon:'🔗',name:'조사',en:'Postposition',desc:'체언 뒤에 붙어 문법 관계를 나타냄',ex:'이/가, 을/를, 은/는, 에서'},
+  {icon:'😲',name:'감탄사',en:'Interjection',desc:'감정·의지를 독립적으로 나타냄',ex:'아, 어머, 와, 이야, 네'},
+];
+
+const STAGES = [
+  {title:'명사의 문',avatar:'🚪',speaker:'돌상 문지기',
+   story:'말의 왕국 입구! 돌상 문지기가 길을 막습니다.\n"이름을 나타내는 품사를 알아야 통과할 수 있소!"',
+   q:'다음 중 <명사>가 아닌 것은?',
+   hint:'명사: 사람·사물·장소·개념의 이름을 나타내는 말',
+   choices:['🏫 학교','🌊 바다','💨 빨리','💝 우정'],answer:2,
+   fb:'"빨리"는 부사입니다. 학교·바다·우정은 이름을 나타내는 명사예요!'},
+  {title:'대명사의 다리',avatar:'🌉',speaker:'다리 요정',
+   story:'안개 다리 위! 요정이 수수께끼를 냅니다.\n"이름 대신 쓰이는 말이 뭔지 알아야 건널 수 있어요!"',
+   q:'밑줄 친 단어가 <대명사>인 것은?\n①나는 학생이다  ②하늘이 파랗다  ③꽃이 예쁘다  ④학교가 좋다',
+   hint:'대명사: 나, 너, 우리, 이것, 저기 — 명사를 대신하는 말',
+   choices:['① 나','② 하늘','③ 꽃','④ 학교'],answer:0,
+   fb:'"나"는 사람을 가리키는 대명사입니다. 나머지는 모두 명사예요!'},
+  {title:'수사의 미로',avatar:'🌀',speaker:'미로 마법사',
+   story:'끝없는 미로에 갇혔어요! 자물쇠를 열려면 수사를 알아야 해요.',
+   q:'다음 중 <수사>인 것은?',
+   hint:'수사: 하나·둘·첫째처럼 수량·순서를 나타내는 말',
+   choices:['① 하나, 둘, 셋','② 이것, 저것','③ 크다, 작다','④ 매우, 아주'],answer:0,
+   fb:'"하나, 둘, 셋"은 수량을 나타내는 수사입니다!'},
+  {title:'동사의 용암굴',avatar:'🌋',speaker:'불꽃 정령',
+   story:'용암이 부글부글! 불꽃 정령이 외칩니다.\n"움직임을 나타내는 동사의 힘을 보여라!"',
+   q:'"토끼가 빠르게 달렸다."에서\n<동사>를 찾으세요.',
+   hint:'동사: ~다로 끝나며 움직임·작용을 나타내는 말',
+   choices:['🐰 토끼','⚡ 빠르게','🏃 달렸다','✅ 가'],answer:2,
+   fb:'"달렸다(달리다)"는 움직임을 나타내는 동사입니다!'},
+  {title:'형용사의 숲',avatar:'🌳',speaker:'숲의 정령',
+   story:'꽃들이 시들어가는 신비로운 숲...\n"성질과 상태를 나타내는 형용사의 힘으로 꽃을 살려줘요!"',
+   q:'다음 중 <형용사>가 아닌 것은?',
+   hint:'형용사: 성질·상태를 나타냄 / 동사: 움직임·작용을 나타냄',
+   choices:['🌸 예쁘다','🌊 조용하다','🏃 뛰다','☁️ 흐리다'],answer:2,
+   fb:'"뛰다"는 동사입니다. 예쁘다·조용하다·흐리다는 상태를 나타내는 형용사예요!'},
+  {title:'관형사의 탑',avatar:'🗼',speaker:'탑 수호자',
+   story:'하늘 높이 솟은 탑! 수호자가 묻습니다.\n"체언 앞에서 꾸며주는 관형사를 알아야 탑에 오를 수 있다!"',
+   q:'밑줄 친 단어가 <관형사>인 문장은?',
+   hint:'관형사: 새 책, 헌 옷, 모든 학생 — 명사 앞, 형태 불변',
+   choices:['① 하늘이 참 넓다','② 새 신발이 예쁘다','③ 빨리 달려라','④ 나는 행복해'],answer:1,
+   fb:'"새"는 명사 "신발" 앞에서 꾸며주는 관형사입니다!'},
+  {title:'부사의 바람길',avatar:'💨',speaker:'바람의 신',
+   story:'협곡에 거센 바람! 바람의 신이 외칩니다.\n"용언이나 다른 말을 꾸미는 부사를 찾아내면 통과!"',
+   q:'"매우 추운 겨울에 눈이 펑펑 내렸다."\n여기서 <부사>를 모두 고르면?',
+   hint:'부사: 동사·형용사·다른 부사를 꾸미는 말',
+   choices:['매우 / 펑펑','겨울 / 눈','추운 / 내렸다','매우 / 눈'],answer:0,
+   fb:'"매우"(형용사 꾸밈), "펑펑"(동사 꾸밈) — 모두 부사입니다!'},
+  {title:'조사의 강',avatar:'🌊',speaker:'강의 여신',
+   story:'깊고 넓은 강! 여신이 노래합니다.\n"체언 뒤에 붙어 관계를 맺어주는 조사를 알아야 강을 건너!"',
+   q:'다음 중 <조사>가 아닌 것은?',
+   hint:'조사: 이/가, 을/를, 은/는, 에서, 와/과 — 체언 뒤에 붙는 말',
+   choices:['🔗 이/가','📍 에서','✨ 매우','🤝 와/과'],answer:2,
+   fb:'"매우"는 부사입니다. 이/가·에서·와/과는 모두 조사예요!'},
+  {title:'감탄사의 성문',avatar:'🏰',speaker:'수호 기사',
+   story:'드디어 마지막 관문! 수호 기사가 외칩니다.\n"감정과 의지를 독립적으로 표현하는 감탄사를 알면 문이 열린다!"',
+   q:'다음 중 <감탄사>인 것은?',
+   hint:'감탄사: 아·와·어머·네·아니오 — 독립적으로 감정·의지·대답을 나타냄',
+   choices:['🎉 "아, 정말 좋다!" 의 [아]','🤔 나는 학생이다 의 [나]','🌈 예쁜 꽃 의 [예쁜]','🚀 빠르게 뛰다 의 [빠르게]'],answer:0,
+   fb:'"아"는 감정을 독립적으로 나타내는 감탄사입니다! 성문이 열렸어요! 🎊'},
+];
+
+// 보스전 문제 (15개 → 보스 HP 15)
+const BOSS_QS = [
+  {q:'"책상 위에 연필이 있다."\n밑줄 친 [위에]에서 [에]는 무슨 품사?',choices:['명사','동사','조사','부사'],answer:2,fb:'"에"는 체언 "위" 뒤에 붙어 장소를 나타내는 조사입니다!'},
+  {q:'다음 중 <동사>인 것은?',choices:['예쁘다','높다','먹다','조용하다'],answer:2,fb:'"먹다"는 행동·작용을 나타내는 동사입니다!'},
+  {q:'"첫째가 도착했다."에서\n[첫째]는 무슨 품사?',choices:['명사','수사','대명사','관형사'],answer:1,fb:'"첫째"는 순서를 나타내는 수사입니다!'},
+  {q:'"어머, 정말 예쁘다!"에서\n[어머]는 무슨 품사?',choices:['부사','형용사','감탄사','조사'],answer:2,fb:'"어머"는 놀라움을 나타내는 감탄사입니다!'},
+  {q:'"저 산이 높다."에서\n[저]는 무슨 품사?',choices:['대명사','관형사','부사','조사'],answer:1,fb:'"저"는 명사 "산" 앞에서 꾸며주는 관형사입니다!'},
+  {q:'다음 중 <형용사>가 아닌 것은?',choices:['행복하다','달리다','춥다','아름답다'],answer:1,fb:'"달리다"는 동사입니다. 나머지는 상태를 나타내는 형용사예요!'},
+  {q:'"강아지가 마당에서 뛰어논다."\n이 문장에서 <명사>를 모두 고르면?',choices:['강아지 / 마당','뛰어논다 / 마당','강아지 / 뛰어논다','강아지 / 에서'],answer:0,fb:'"강아지"와 "마당"이 명사입니다! "뛰어논다"는 동사, "에서"는 조사예요.'},
+  {q:'"매우 빠른 치타가 달린다."\n[매우]는 무슨 품사?',choices:['형용사','관형사','부사','수사'],answer:2,fb:'"매우"는 형용사 "빠른"을 꾸며주는 부사입니다!'},
+  {q:'체언에 속하지 않는 것은?',choices:['명사','대명사','수사','부사'],answer:3,fb:'체언은 명사·대명사·수사입니다. 부사는 수식언(부사)에 속해요!'},
+  {q:'"우리가 이겼다!"에서\n[우리]는 무슨 품사?',choices:['명사','대명사','수사','관형사'],answer:1,fb:'"우리"는 사람들을 가리키는 대명사입니다!'},
+  {q:'다음 중 <관형사>인 것은?',choices:['매우','빨리','새','아마'],answer:2,fb:'"새"는 명사 앞에 붙어 꾸며주는 관형사입니다!'},
+  {q:'용언에 속하는 품사끼리 묶인 것은?',choices:['명사+대명사','동사+형용사','관형사+부사','조사+감탄사'],answer:1,fb:'용언은 동사와 형용사입니다. 문장에서 서술어 역할을 해요!'},
+  {q:'"하나, 둘, 셋 출발!"에서\n[하나]의 품사는?',choices:['명사','대명사','수사','감탄사'],answer:2,fb:'"하나"는 수량을 나타내는 수사입니다!'},
+  {q:'"와, 대단하다!"에서\n[와]의 품사는?',choices:['조사','감탄사','부사','형용사'],answer:1,fb:'"와"는 감탄의 감정을 나타내는 감탄사입니다!'},
+  {q:'"하늘이 참 맑다."에서\n조사를 찾으면?',choices:['하늘','이','참','맑다'],answer:1,fb:'"이"는 명사 "하늘" 뒤에 붙어 주어 관계를 나타내는 조사입니다! "참"은 부사예요.'},
+];
+
+const BOSS_TOTAL_HP = BOSS_QS.length; // 15
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let playerName = '모험가';
+let stage = 0;
+let score = 0;
+let hp = 3;
+let answered = false;
+let bossHp = BOSS_TOTAL_HP;
+let bossQIdx = 0;
+let bossAnswered = false;
+let timerInterval = null;
+let secondsLeft = 0;
+
+// ══════════════════════════════════════════════
+//  STARS
+// ══════════════════════════════════════════════
+(function(){
+  const c = document.getElementById('stars-bg');
+  for(let i=0;i<100;i++){
+    const s = document.createElement('div');
+    s.className='star';
+    const sz = Math.random()*2+1;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*3}s;--dl:${Math.random()*3}s;background:rgba(255,255,255,${.4+Math.random()*.6})`;
+    c.appendChild(s);
+  }
+})();
+
+// ══════════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════════
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showTitle(){stopTimer();show('title-screen');}
+function showDictScreen(){buildDict();show('dict-screen');}
+function goName(){show('name-screen');setTimeout(()=>document.getElementById('player-name-input').focus(),200);}
+function showRankFromTitle(){renderRanking();show('rank-screen');}
+
+// ══════════════════════════════════════════════
+//  DICT
+// ══════════════════════════════════════════════
+function buildDict(){
+  document.getElementById('dict-grid').innerHTML = DICT_DATA.map(d=>`
+    <div class="dcard">
+      <div class="dcard-icon">${d.icon}</div>
+      <div class="dcard-name">${d.name} (${d.en})</div>
+      <div class="dcard-desc">${d.desc}</div>
+      <div class="dcard-ex">예) ${d.ex}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+//  TIMER (40분 = 2400초)
+// ══════════════════════════════════════════════
+function startTimer(secs){
+  stopTimer();
+  secondsLeft = secs;
+  updateTimerUI();
+  timerInterval = setInterval(()=>{
+    secondsLeft--;
+    updateTimerUI();
+    if(secondsLeft<=0){stopTimer();timeUp();}
+  },1000);
+}
+function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}}
+function updateTimerUI(){
+  const m=String(Math.floor(secondsLeft/60)).padStart(2,'0');
+  const s=String(secondsLeft%60).padStart(2,'0');
+  const txt=`⏱ ${m}:${s}`;
+  const urgent = secondsLeft<=120;
+  ['timer-badge','boss-timer-badge'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.textContent=txt;el.className='timer-badge'+(urgent?' urgent':'');}
+  });
+}
+function timeUp(){
+  // 시간 초과 → 엔딩으로
+  showEnding();
+}
+
+// ══════════════════════════════════════════════
+//  GAME START
+// ══════════════════════════════════════════════
+function startGame(){
+  const n = document.getElementById('player-name-input').value.trim();
+  playerName = n || '모험가';
+  stage = 0; score = 0; hp = 3; answered = false;
+  startTimer(2400); // 40분
+  show('game-screen');
+  renderStage();
+}
+function restartGame(){
+  document.getElementById('player-name-input').value = playerName;
+  goName();
+}
+
+// ══════════════════════════════════════════════
+//  STAGE
+// ══════════════════════════════════════════════
+function renderStage(){
+  const s = STAGES[stage];
+  answered = false;
+  document.getElementById('hud-name').textContent = playerName;
+  document.getElementById('hud-stage').textContent = `STAGE ${stage+1}/9 · ${s.title}`;
+  document.getElementById('score-disp').textContent = score;
+  document.getElementById('s-avatar').textContent = s.avatar;
+  document.getElementById('s-speaker').textContent = s.speaker;
+  document.getElementById('s-text').textContent = s.story;
+  document.getElementById('mission-q').textContent = s.q;
+  document.getElementById('mission-hint').textContent = '💡 '+s.hint;
+  updateHpUI();
+  buildProgress();
+
+  const grid = document.getElementById('choices');
+  grid.innerHTML = s.choices.map((c,i)=>`
+    <button class="choice" onclick="choose(${i})">
+      <span class="cnum">${['①','②','③','④'][i]}</span><span>${c}</span>
+    </button>`).join('');
+
+  const fb = document.getElementById('feedback');
+  fb.className='feedback'; fb.style.display='none';
+  document.getElementById('next-row').style.display='none';
+}
+
+function buildProgress(){
+  document.getElementById('progress-row').innerHTML = STAGES.map((_,i)=>{
+    let cls='pdot';
+    if(i<stage)cls+=' done';
+    else if(i===stage)cls+=' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function updateHpUI(){
+  document.getElementById('hud-hp').textContent = '❤️'.repeat(hp)||'💔';
+  document.getElementById('boss-hud-hp').textContent = '❤️'.repeat(hp)||'💔';
+}
+
+function choose(idx){
+  if(answered)return;
+  answered=true;
+  const s=STAGES[stage];
+  document.querySelectorAll('.choice').forEach(b=>b.disabled=true);
+  const correct = idx===s.answer;
+  document.querySelectorAll('.choice')[idx].classList.add(correct?'correct':'wrong');
+  if(!correct) document.querySelectorAll('.choice')[s.answer].classList.add('correct');
+  if(correct){score+=10;}
+  else{hp=Math.max(0,hp-1);}
+  updateHpUI();
+  document.getElementById('score-disp').textContent=score;
+
+  const fb=document.getElementById('feedback');
+  fb.style.display='block';
+  fb.className='feedback '+(correct?'ok':'ng');
+  document.getElementById('fb-title').textContent=correct?'✅ 정답! +10점':'❌ 틀렸어요! ❤️ -1';
+  document.getElementById('fb-body').textContent=s.fb;
+  document.getElementById('next-row').style.display='block';
+}
+
+function nextStage(){
+  stage++;
+  if(stage>=STAGES.length){
+    // 9스테이지 완료 → 보스전
+    startBoss();
+  } else {
+    renderStage();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  BOSS
+// ══════════════════════════════════════════════
+function startBoss(){
+  bossHp = BOSS_TOTAL_HP;
+  bossQIdx = 0;
+  bossAnswered = false;
+  show('boss-screen');
+  document.getElementById('boss-hud-name').textContent = playerName;
+  document.getElementById('boss-hud-hp').textContent = '❤️'.repeat(hp)||'💔';
+  document.getElementById('boss-score-disp').textContent = score;
+  document.getElementById('boss-label').textContent = '⚔️ FINAL BOSS BATTLE';
+  document.getElementById('boss-name').textContent = '👹 어둠의 대마왕 그림자';
+  document.getElementById('boss-fig').textContent = '👹';
+  document.getElementById('boss-fig').className = 'boss-fig';
+  document.getElementById('boss-status').textContent = '크크크... 감히 여기까지 왔느냐!';
+  updateBossHpBar();
+  renderBossQ();
+}
+
+function updateBossHpBar(){
+  const pct = bossHp/BOSS_TOTAL_HP*100;
+  document.getElementById('boss-hp-fill').style.width = pct+'%';
+  document.getElementById('boss-hp-text').textContent = `${bossHp} / ${BOSS_TOTAL_HP}`;
+  document.getElementById('boss-score-disp').textContent = score;
+}
+
+function renderBossQ(){
+  bossAnswered=false;
+  if(bossQIdx>=BOSS_QS.length){showEnding();return;}
+  const q=BOSS_QS[bossQIdx];
+  document.getElementById('boss-q').textContent = q.q;
+  const grid=document.getElementById('boss-choices');
+  grid.innerHTML=q.choices.map((c,i)=>`
+    <button class="boss-choice" onclick="bossChoose(${i})">
+      <span class="cnum">${['①','②','③','④'][i]}</span><span>${c}</span>
+    </button>`).join('');
+  const fb=document.getElementById('boss-feedback');
+  fb.className='boss-feedback'; fb.style.display='none';
+  document.getElementById('boss-next-row').style.display='none';
+}
+
+function bossChoose(idx){
+  if(bossAnswered)return;
+  bossAnswered=true;
+  const q=BOSS_QS[bossQIdx];
+  document.querySelectorAll('.boss-choice').forEach(b=>b.disabled=true);
+  const correct=idx===q.answer;
+  document.querySelectorAll('.boss-choice')[idx].classList.add(correct?'correct':'wrong');
+  if(!correct) document.querySelectorAll('.boss-choice')[q.answer].classList.add('correct');
+
+  const fb=document.getElementById('boss-feedback');
+  fb.style.display='block';
+
+  if(correct){
+    score+=5;
+    bossHp--;
+    updateBossHpBar();
+    // Hit animation
+    const fig=document.getElementById('boss-fig');
+    fig.classList.remove('hit');
+    void fig.offsetWidth;
+    fig.classList.add('hit');
+    // Damage popup
+    showDamagePop();
+    if(bossHp<=0){
+      document.getElementById('boss-status').textContent='으악...! 패배했다...!';
+      fig.className='boss-fig dead';
+      fb.className='boss-feedback ok';
+      document.getElementById('boss-fb-title').textContent='💥 보스를 쓰러뜨렸다!';
+      document.getElementById('boss-fb-body').textContent=q.fb+'\n\n🏆 모든 미션 완료! 말의 왕국을 구했습니다!';
+      document.getElementById('boss-next-btn').textContent='🏆 결과 보기';
+      document.getElementById('boss-next-row').style.display='block';
+      return;
+    }
+    const hpPct=Math.round(bossHp/BOSS_TOTAL_HP*100);
+    const statuses=['크크...그 정도론 안 돼!','으음... 제법인데...!','이, 이럴 수가!','제발 멈춰라...!','으아악 더는 안 돼!'];
+    const si=Math.floor((1-bossHp/BOSS_TOTAL_HP)*statuses.length);
+    document.getElementById('boss-status').textContent=statuses[Math.min(si,statuses.length-1)];
+    fb.className='boss-feedback ok';
+    document.getElementById('boss-fb-title').textContent=`✅ 정답! 보스에게 💥 데미지! (남은 HP: ${bossHp})`;
+    document.getElementById('boss-fb-body').textContent=q.fb;
+  } else {
+    hp=Math.max(0,hp-1);
+    updateHpUI();
+    fb.className='boss-feedback ng';
+    document.getElementById('boss-fb-title').textContent='❌ 틀렸어요! 보스가 반격! ❤️ -1';
+    document.getElementById('boss-fb-body').textContent=q.fb;
+    document.getElementById('boss-status').textContent='크하하! 이게 진짜 실력이냐!';
+    if(hp<=0){
+      document.getElementById('boss-fb-body').textContent=q.fb+'\n\n💀 목숨을 다 잃었습니다... 하지만 도전은 계속!';
+      document.getElementById('boss-next-btn').textContent='📊 결과 보기';
+      document.getElementById('boss-next-row').style.display='block';
+      return;
+    }
+  }
+  document.getElementById('boss-next-row').style.display='block';
+  document.getElementById('boss-next-btn').textContent='다음 공격 →';
+}
+
+function showDamagePop(){
+  const arena=document.querySelector('.boss-arena');
+  const pop=document.createElement('div');
+  pop.className='damage-pop';
+  pop.textContent='💥 -1!';
+  arena.appendChild(pop);
+  setTimeout(()=>pop.remove(),750);
+}
+
+function nextBossQ(){
+  bossQIdx++;
+  if(bossHp<=0||hp<=0||bossQIdx>=BOSS_QS.length){
+    showEnding();
+  } else {
+    renderBossQ();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  ENDING + RANKING
+// ══════════════════════════════════════════════
+function showEnding(){
+  stopTimer();
+  saveScore();
+  show('ending-screen');
+
+  const stageScore = Math.min(stage,9)*10;
+  const bossScore = (BOSS_TOTAL_HP-Math.max(bossHp,0))*5;
+  const total = score; // already accumulated
+
+  let emoji,title,sub,badge,badgeStyle;
+  if(bossHp<=0){
+    emoji='🏆';title='말의 왕국을 구했다!';
+    sub='9품사의 힘으로 어둠의 대마왕을 완전히 쓰러뜨렸습니다!\n반에서 가장 뛰어난 언어 대마법사!';
+    badge='🥇 언어 대마법사';badgeStyle='background:linear-gradient(135deg,#ffd166,#ff6b9d);color:#0a0814;';
+  } else if(score>=60){
+    emoji='⚔️';title='영웅이 되었다!';
+    sub='훌륭한 활약으로 왕국에 빛을 가져왔습니다!\n보스를 끝까지 쓰러뜨려봐요!';
+    badge='🥈 문법 기사';badgeStyle='background:linear-gradient(135deg,#9b5de5,#5c1fa8);color:#fff;';
+  } else if(score>=30){
+    emoji='🌱';title='모험은 계속된다!';
+    sub='용감하게 싸웠지만 아직 갈 길이 남아있어요.\n9품사를 복습하고 다시 도전!';
+    badge='🥉 견습 마법사';badgeStyle='background:#2a2250;color:var(--muted);';
+  } else {
+    emoji='📚';title='공부가 필요해요!';
+    sub='9품사 사전을 다시 펼쳐보세요.\n다시 도전하면 반드시 이길 수 있어요!';
+    badge='📖 국어 탐험가';badgeStyle='background:#2a2250;color:var(--muted);';
+  }
+
+  document.getElementById('end-emoji').textContent=emoji;
+  document.getElementById('end-title').textContent=title;
+  document.getElementById('end-sub').textContent=sub;
+  document.getElementById('end-score-big').textContent=score+'점';
+  const gb=document.getElementById('end-badge');
+  gb.textContent=badge;gb.style.cssText=badgeStyle;
+}
+
+// ── Ranking (localStorage) ──
+const RANK_KEY='pumsa_ranking_v2';
+function loadRanking(){try{return JSON.parse(localStorage.getItem(RANK_KEY)||'[]');}catch{return[];}}
+function saveRanking(data){localStorage.setItem(RANK_KEY,JSON.stringify(data));}
+function saveScore(){
+  const data=loadRanking();
+  const existing=data.findIndex(r=>r.name===playerName);
+  if(existing>=0){if(score>data[existing].score)data[existing].score=score;}
+  else{data.push({name:playerName,score});}
+  data.sort((a,b)=>b.score-a.score);
+  saveRanking(data.slice(0,20));
+}
+function goRanking(){renderRanking();show('rank-screen');}
+function renderRanking(){
+  const data=loadRanking();
+  const medals=['🥇','🥈','🥉'];
+  const grades=(s)=>s>=85?'언어 대마법사':s>=60?'문법 기사':s>=30?'견습 마법사':'국어 탐험가';
+  const avatars=['🧙','🧝','🧚','🦸','🧜','🧞','🦹','🧟','🧛','🧌'];
+  if(!data.length){
+    document.getElementById('rank-list').innerHTML='<div class="rank-empty">아직 기록이 없어요!<br>첫 번째 모험가가 되어보세요 ⚔️</div>';
+    return;
+  }
+  document.getElementById('rank-list').innerHTML=data.map((r,i)=>`
+    <div class="rank-item ${i<3?'rank-'+(i+1):''}">
+      <div class="rank-pos">${medals[i]||('#'+(i+1))}</div>
+      <div class="rank-avatar">${avatars[i%avatars.length]}</div>
+      <div class="rank-info">
+        <div class="rank-pname">${r.name}</div>
+        <div class="rank-grade">${grades(r.score)}</div>
+      </div>
+      <div class="rank-pts">${r.score}점</div>
+    </div>`).join('');
+}
+function clearRanking(){if(confirm('랭킹을 초기화할까요?')){saveRanking([]);renderRanking();}}
+</script>
+</body>
+</html>
