@@ -283,6 +283,26 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .room-mini.del{background:transparent;border:1px solid var(--border2);color:var(--muted);}
 .room-mini.del:hover{border-color:var(--red);color:#ff8099;}
 .room-mini.cur{background:transparent;border:1px solid var(--cyan);color:var(--cyan);cursor:default;}
+
+/* ── PvP 방해 공격 효과 ── */
+@keyframes shakeFx{0%,100%{transform:translateX(0) rotate(0)}15%{transform:translateX(-12px) rotate(-1.5deg)}30%{transform:translateX(12px) rotate(1.5deg)}45%{transform:translateX(-10px) rotate(-1deg)}60%{transform:translateX(10px) rotate(1deg)}75%{transform:translateX(-6px)}90%{transform:translateX(6px)}}
+.fx-shake{animation:shakeFx .55s ease 0s 3;}
+.fx-blur{filter:blur(6px) contrast(.8);transition:filter .25s;}
+.fx-flip{transform:rotate(180deg);transition:transform .45s ease;}
+.fx-spin{animation:spinFx 1.6s ease;}
+@keyframes spinFx{0%{transform:rotate(0)}50%{transform:rotate(8deg) scale(.96)}100%{transform:rotate(0)}}
+.fx-fog{position:fixed;inset:0;z-index:50;pointer-events:none;
+  background:radial-gradient(circle at 50% 45%,rgba(20,0,40,0) 0%,rgba(10,0,20,.55) 45%,rgba(5,0,12,.96) 100%);
+  animation:fogInOut 2.3s ease forwards;}
+.fx-fog::after{content:'🌑';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:6rem;opacity:.5;}
+@keyframes fogInOut{0%{opacity:0}18%{opacity:1}68%{opacity:1}100%{opacity:0}}
+.attack-toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:60;
+  background:linear-gradient(135deg,#f72585,#9b5de5);color:#fff;font-weight:700;font-size:.85rem;
+  padding:.6rem 1.1rem;border-radius:30px;box-shadow:0 6px 24px rgba(247,37,133,.55);
+  animation:toastPop 2.4s ease forwards;pointer-events:none;white-space:nowrap;}
+@keyframes toastPop{0%{opacity:0;transform:translateX(-50%) translateY(-22px) scale(.9)}12%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}82%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+.pvp-note{background:rgba(247,37,133,.1);border:1px solid rgba(247,37,133,.35);border-radius:12px;
+  padding:.6rem .9rem;margin-bottom:1rem;font-size:.78rem;color:#ff9ec0;line-height:1.5;text-align:center;}
 </style>
 </head>
 <body>
@@ -427,6 +447,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
     <div class="room-current" id="room-current"></div>
 
+    <div class="pvp-note">⚔️ <b>대전 모드</b>: 같은 방 친구들과 동시에 플레이하면, 내가 정답을 맞힐 때마다 친구들 화면에 방해 공격(흔들기·먹물·뒤집기 등)이 날아가요!<br><span style="font-size:.7rem;opacity:.8;">※ 같은 기기(여러 탭/창)에서 작동해요</span></div>
+
     <div class="room-section">
       <div class="room-section-title">🔑 방 코드로 입장</div>
       <div class="room-code-row">
@@ -542,8 +564,8 @@ const STAGES = [
    fb:'"아"는 감정을 독립적으로 나타내는 감탄사입니다! 성문이 열렸어요! 🎊'},
 ];
 
-// 보스전 문제 (15개 → 보스 HP 15)
-const BOSS_QS = [
+// 보스전 문제 은행 (매 판마다 랜덤 출제)
+const BOSS_QS_BANK = [
   {q:'"책상 위에 연필이 있다."\n밑줄 친 [위에]에서 [에]는 무슨 품사?',choices:['명사','동사','조사','부사'],answer:2,fb:'"에"는 체언 "위" 뒤에 붙어 장소를 나타내는 조사입니다!'},
   {q:'다음 중 <동사>인 것은?',choices:['예쁘다','높다','먹다','조용하다'],answer:2,fb:'"먹다"는 행동·작용을 나타내는 동사입니다!'},
   {q:'"첫째가 도착했다."에서\n[첫째]는 무슨 품사?',choices:['명사','수사','대명사','관형사'],answer:1,fb:'"첫째"는 순서를 나타내는 수사입니다!'},
@@ -559,9 +581,53 @@ const BOSS_QS = [
   {q:'"하나, 둘, 셋 출발!"에서\n[하나]의 품사는?',choices:['명사','대명사','수사','감탄사'],answer:2,fb:'"하나"는 수량을 나타내는 수사입니다!'},
   {q:'"와, 대단하다!"에서\n[와]의 품사는?',choices:['조사','감탄사','부사','형용사'],answer:1,fb:'"와"는 감탄의 감정을 나타내는 감탄사입니다!'},
   {q:'"하늘이 참 맑다."에서\n조사를 찾으면?',choices:['하늘','이','참','맑다'],answer:1,fb:'"이"는 명사 "하늘" 뒤에 붙어 주어 관계를 나타내는 조사입니다! "참"은 부사예요.'},
+  {q:'"빨리 와!"에서\n[빨리]의 품사는?',choices:['동사','부사','형용사','감탄사'],answer:1,fb:'"빨리"는 동사 "와"를 꾸미는 부사입니다!'},
+  {q:'다음 중 <명사>인 것은?',choices:['달리다','학교','매우','그리고'],answer:1,fb:'"학교"는 장소의 이름을 나타내는 명사입니다!'},
+  {q:'"그는 친절하다."에서\n[그]의 품사는?',choices:['명사','대명사','관형사','조사'],answer:1,fb:'"그"는 사람을 가리키는 대명사입니다!'},
+  {q:'"사과 세 개를 샀다."에서\n[세]의 품사는?',choices:['수사','관형사','명사','부사'],answer:1,fb:'"세"는 뒤의 명사 "개"를 꾸미는 수 관형사입니다! 수사가 아니에요.'},
+  {q:'"둘에 셋을 더하면 다섯이다."에서\n[둘]의 품사는?',choices:['관형사','수사','명사','부사'],answer:1,fb:'"둘"은 수량을 나타내며 조사가 붙을 수 있는 수사입니다!'},
+  {q:'다음 중 <감탄사>가 아닌 것은?',choices:['아','어머','네','매우'],answer:3,fb:'"매우"는 부사입니다. 아·어머·네는 감탄사예요!'},
+  {q:'"천천히 걸었다."에서\n[천천히]의 품사는?',choices:['형용사','부사','동사','관형사'],answer:1,fb:'"천천히"는 동사 "걸었다"를 꾸미는 부사입니다!'},
+  {q:'다음 중 <조사>인 것은?',choices:['그리고','을/를','매우','새'],answer:1,fb:'"을/를"은 목적어를 나타내는 조사입니다!'},
+  {q:'"새 옷을 입었다."에서\n[새]의 품사는?',choices:['형용사','관형사','명사','부사'],answer:1,fb:'"새"는 명사 "옷"을 꾸미는 관형사입니다! 형태가 변하지 않아요.'},
+  {q:'"꽃이 매우 아름답다."에서\n[아름답다]의 품사는?',choices:['동사','형용사','부사','명사'],answer:1,fb:'"아름답다"는 상태를 나타내는 형용사입니다!'},
+  {q:'"학생들이 운동장에서 논다."에서\n[에서]의 품사는?',choices:['명사','부사','조사','동사'],answer:2,fb:'"에서"는 장소를 나타내는 조사입니다!'},
+  {q:'다음 중 품사가 나머지와 다른 하나는?',choices:['먹다','자다','읽다','예쁘다'],answer:3,fb:'"예쁘다"는 형용사, 나머지는 동사입니다!'},
+  {q:'"우와, 정말 멋지다!"에서\n[우와]의 품사는?',choices:['부사','감탄사','형용사','조사'],answer:1,fb:'"우와"는 감탄을 나타내는 감탄사입니다!'},
+  {q:'"나의 책"에서\n[의]의 품사는?',choices:['대명사','조사','관형사','명사'],answer:1,fb:'"의"는 소유 관계를 나타내는 조사입니다!'},
+  {q:'다음 중 <대명사>가 아닌 것은?',choices:['나','너','우리','학교'],answer:3,fb:'"학교"는 명사입니다. 나·너·우리는 대명사예요!'},
+  {q:'"그 사람은 항상 웃는다."에서\n[항상]의 품사는?',choices:['관형사','부사','명사','형용사'],answer:1,fb:'"항상"은 동사 "웃는다"를 꾸미는 부사입니다!'},
+  {q:'"모든 학생이 모였다."에서\n[모든]의 품사는?',choices:['수사','관형사','부사','대명사'],answer:1,fb:'"모든"은 명사 "학생"을 꾸미는 관형사입니다!'},
+  {q:'다음 중 <동사>가 아닌 것은?',choices:['뛰다','걷다','높다','마시다'],answer:2,fb:'"높다"는 형용사입니다. 나머지는 동사예요!'},
+  {q:'"비가 주룩주룩 내린다."에서\n[주룩주룩]의 품사는?',choices:['명사','부사','형용사','감탄사'],answer:1,fb:'"주룩주룩"은 동사 "내린다"를 꾸미는 부사(의태어)입니다!'},
+  {q:'"이것은 내 것이다."에서\n[이것]의 품사는?',choices:['관형사','대명사','명사','수사'],answer:1,fb:'"이것"은 사물을 가리키는 대명사입니다!'},
+  {q:'품사 중 형태가 변하는(활용하는) 것은?',choices:['명사','조사','동사','관형사'],answer:2,fb:'동사와 형용사(용언)는 활용합니다! 동사가 정답이에요.'},
+  {q:'"와! 눈이 온다!"에서\n품사가 감탄사인 것은?',choices:['와','눈','온다','이'],answer:0,fb:'"와"는 감탄사입니다!'},
+  {q:'다음 중 <부사>인 것은?',choices:['아주','학교','먹다','그'],answer:0,fb:'"아주"는 정도를 나타내는 부사입니다!'},
+  {q:'"형이 동생보다 크다."에서\n[보다]의 품사는?',choices:['동사','조사','부사','형용사'],answer:1,fb:'"보다"는 비교를 나타내는 조사입니다!'},
+  {q:'"첫째, 둘째, 셋째로 발표했다."에서\n[둘째]의 품사는?',choices:['관형사','수사','명사','부사'],answer:1,fb:'"둘째"는 순서를 나타내는 수사입니다!'},
+  {q:'다음 중 수식언끼리 묶인 것은?',choices:['관형사+부사','명사+대명사','동사+형용사','조사+감탄사'],answer:0,fb:'수식언은 관형사와 부사입니다!'},
+  {q:'"책을 읽고 잠을 잤다."에서\n동사를 모두 고르면?',choices:['읽고 / 잤다','책 / 잠','읽고 / 잠','책 / 잤다'],answer:0,fb:'"읽고"와 "잤다"가 동사입니다!'},
+  {q:'"참 예쁜 꽃이구나!"에서\n[참]의 품사는?',choices:['관형사','부사','감탄사','명사'],answer:1,fb:'"참"은 형용사 "예쁜"을 꾸미는 부사입니다!'},
+  {q:'독립언에 속하는 품사는?',choices:['명사','감탄사','동사','조사'],answer:1,fb:'독립언은 감탄사입니다!'},
+  {q:'"그녀는 노래를 부른다."에서\n[를]의 품사는?',choices:['명사','조사','동사','부사'],answer:1,fb:'"를"은 목적어를 나타내는 조사입니다!'},
+  {q:'관계언에 속하는 품사는?',choices:['부사','조사','관형사','감탄사'],answer:1,fb:'관계언은 조사입니다!'},
+  {q:'다음 중 <형용사>인 것은?',choices:['달리다','노랗다','먹다','읽다'],answer:1,fb:'"노랗다"는 상태를 나타내는 형용사입니다!'},
+  {q:'"아이가 방긋 웃었다."에서\n[방긋]의 품사는?',choices:['명사','부사','관형사','감탄사'],answer:1,fb:'"방긋"은 동사 "웃었다"를 꾸미는 부사입니다!'},
+  {q:'"옛 친구를 만났다."에서\n[옛]의 품사는?',choices:['명사','관형사','부사','형용사'],answer:1,fb:'"옛"은 명사 "친구"를 꾸미는 관형사입니다!'},
+  {q:'체언에 속하는 품사끼리 묶인 것은?',choices:['명사+대명사+수사','동사+형용사','관형사+부사','조사+감탄사'],answer:0,fb:'체언은 명사·대명사·수사입니다!'},
 ];
 
-const BOSS_TOTAL_HP = BOSS_QS.length; // 15
+// 보스전마다 문제 은행에서 무작위로 골라 출제
+const BOSS_ASK_COUNT = 25;        // 한 판에 출제할 문제 수 (보스 HP)
+let BOSS_QS = [];
+let BOSS_TOTAL_HP = BOSS_ASK_COUNT;
+function pickBossQuestions(){
+  const pool=[...BOSS_QS_BANK];
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  BOSS_QS = pool.slice(0, Math.min(BOSS_ASK_COUNT, pool.length));
+  BOSS_TOTAL_HP = BOSS_QS.length;
+}
 
 // ══════════════════════════════════════════════
 //  STATE
@@ -708,7 +774,7 @@ function choose(idx){
   const correct = idx===s.answer;
   document.querySelectorAll('.choice')[idx].classList.add(correct?'correct':'wrong');
   if(!correct) document.querySelectorAll('.choice')[s.answer].classList.add('correct');
-  if(correct){score+=10;}
+  if(correct){score+=10;sendAttack();}
   else{hp=Math.max(0,hp-1);}
   updateHpUI();
   document.getElementById('score-disp').textContent=score;
@@ -735,6 +801,7 @@ function nextStage(){
 //  BOSS
 // ══════════════════════════════════════════════
 function startBoss(){
+  pickBossQuestions();
   bossHp = BOSS_TOTAL_HP;
   bossQIdx = 0;
   bossAnswered = false;
@@ -788,6 +855,7 @@ function bossChoose(idx){
   if(correct){
     score+=5;
     bossHp--;
+    sendAttack();
     updateBossHpBar();
     // Hit animation
     const fig=document.getElementById('boss-fig');
@@ -1063,8 +1131,93 @@ function renderRanking(){
 }
 function clearRanking(){if(confirm(`"${currentRoomName()}" 방의 랭킹을 초기화할까요?`)){saveRanking([]);renderRanking();}}
 
+// ══════════════════════════════════════════════
+//  PvP 방해 공격 (같은 방끼리 실시간 방해)
+//  - 같은 브라우저의 여러 탭/창 사이에서 작동 (서버 없음)
+//  - 정답을 맞히면 같은 방에서 문제 푸는 친구 화면에 방해가 날아감
+// ══════════════════════════════════════════════
+const ATTACK_BUS_KEY='pumsa_attack_bus';
+const ATTACK_TYPES=['shake','fog','blur','flip','shuffle'];
+const ATTACK_LABELS={shake:'화면 흔들기 🫨',fog:'먹물 뿌리기 🌑',blur:'글자 흐리기 🌫️',flip:'화면 뒤집기 🙃',shuffle:'선택지 섞기 🔀'};
+let attackChannel=null;
+
+function initAttackChannel(){
+  try{
+    attackChannel=new BroadcastChannel('pumsa_room_attacks');
+    attackChannel.onmessage=(e)=>handleIncomingAttack(e.data);
+  }catch(_){ attackChannel=null; }
+  // storage 이벤트 폴백 (같은 브라우저의 다른 탭)
+  window.addEventListener('storage',(e)=>{
+    if(e.key===ATTACK_BUS_KEY && e.newValue){
+      try{ handleIncomingAttack(JSON.parse(e.newValue)); }catch(_){}
+    }
+  });
+}
+function handleIncomingAttack(msg){
+  if(!msg||typeof msg!=='object')return;
+  if(msg.roomId!==getActiveRoomId())return;     // 같은 방만
+  if(msg.from===playerName)return;              // 내 공격은 무시
+  if(Date.now()-(msg.ts||0)>5000)return;        // 오래된 메시지 무시
+  receiveAttack(msg.type, msg.from);
+}
+function broadcastAttack(type){
+  const msg={roomId:getActiveRoomId(),from:playerName,type,ts:Date.now()};
+  if(attackChannel){try{attackChannel.postMessage(msg);}catch(_){}}
+  try{localStorage.setItem(ATTACK_BUS_KEY,JSON.stringify(msg));}catch(_){}
+}
+function sendAttack(){
+  const type=ATTACK_TYPES[Math.floor(Math.random()*ATTACK_TYPES.length)];
+  broadcastAttack(type);
+}
+
+// 현재 문제를 풀고 있는 화면(게임/보스)의 컨테이너
+function activePlayContainer(){
+  if(document.getElementById('game-screen').classList.contains('active'))
+    return document.querySelector('#game-screen .game-body');
+  if(document.getElementById('boss-screen').classList.contains('active'))
+    return document.querySelector('#boss-screen .boss-wrap');
+  return null;
+}
+function receiveAttack(type, fromName){
+  // 문제를 풀고 있는 사람만 방해받음
+  if(!activePlayContainer())return;
+  showAttackToast(fromName, type);
+  applyFx(type);
+}
+function showAttackToast(from,type){
+  const t=document.createElement('div');
+  t.className='attack-toast';
+  t.textContent=`👾 ${from||'누군가'}의 방해 공격! ${ATTACK_LABELS[type]||''}`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2400);
+}
+function applyFx(type){
+  const el=activePlayContainer();
+  if(!el)return;
+  if(type==='fog'){
+    const f=document.createElement('div');f.className='fx-fog';
+    document.body.appendChild(f);setTimeout(()=>f.remove(),2300);
+    return;
+  }
+  if(type==='shuffle'){
+    const grid=el.querySelector('.choices, .boss-choices');
+    if(grid){
+      const items=[...grid.children];
+      for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}
+      items.forEach(n=>grid.appendChild(n));
+    }
+    el.classList.add('fx-shake');setTimeout(()=>el.classList.remove('fx-shake'),900);
+    return;
+  }
+  const cls= type==='blur'?'fx-blur' : type==='flip'?'fx-flip' : 'fx-shake';
+  const dur= type==='blur'?1800 : type==='flip'?1600 : 1700;
+  el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls),dur);
+}
+
 // 방 시스템 초기화 (기본 방 생성 + 구버전 랭킹 이전 + 타이틀 뱃지 갱신)
 initRooms();
+initAttackChannel();
 </script>
 </body>
 </html>
