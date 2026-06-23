@@ -805,13 +805,24 @@ function showEnding(){
 
 // ── Ranking (localStorage) ──
 const RANK_KEY='pumsa_ranking_v2';
+// 엔딩 화면과 랭킹 화면이 동일한 등급 규칙을 쓰도록 공통화
+function gradeName(score, bossDefeated){
+  if(bossDefeated) return '언어 대마법사';
+  if(score>=60) return '문법 기사';
+  if(score>=30) return '견습 마법사';
+  return '국어 탐험가';
+}
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function loadRanking(){try{return JSON.parse(localStorage.getItem(RANK_KEY)||'[]');}catch{return[];}}
 function saveRanking(data){localStorage.setItem(RANK_KEY,JSON.stringify(data));}
 function saveScore(){
   const data=loadRanking();
+  const grade=gradeName(score, bossHp<=0);
   const existing=data.findIndex(r=>r.name===playerName);
-  if(existing>=0){if(score>data[existing].score)data[existing].score=score;}
-  else{data.push({name:playerName,score});}
+  if(existing>=0){if(score>data[existing].score){data[existing].score=score;data[existing].grade=grade;}}
+  else{data.push({name:playerName,score,grade});}
   data.sort((a,b)=>b.score-a.score);
   saveRanking(data.slice(0,20));
 }
@@ -819,7 +830,8 @@ function goRanking(){renderRanking();show('rank-screen');}
 function renderRanking(){
   const data=loadRanking();
   const medals=['🥇','🥈','🥉'];
-  const grades=(s)=>s>=85?'언어 대마법사':s>=60?'문법 기사':s>=30?'견습 마법사':'국어 탐험가';
+  // 저장된 등급이 있으면 그대로, 옛 기록은 점수 기준으로 보정
+  const grades=(r)=>r.grade||gradeName(r.score,false);
   const avatars=['🧙','🧝','🧚','🦸','🧜','🧞','🦹','🧟','🧛','🧌'];
   if(!data.length){
     document.getElementById('rank-list').innerHTML='<div class="rank-empty">아직 기록이 없어요!<br>첫 번째 모험가가 되어보세요 ⚔️</div>';
@@ -830,8 +842,8 @@ function renderRanking(){
       <div class="rank-pos">${medals[i]||('#'+(i+1))}</div>
       <div class="rank-avatar">${avatars[i%avatars.length]}</div>
       <div class="rank-info">
-        <div class="rank-pname">${r.name}</div>
-        <div class="rank-grade">${grades(r.score)}</div>
+        <div class="rank-pname">${escapeHtml(r.name)}</div>
+        <div class="rank-grade">${grades(r)}</div>
       </div>
       <div class="rank-pts">${r.score}점</div>
     </div>`).join('');
