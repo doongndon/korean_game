@@ -236,6 +236,53 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 }
 .timer-badge.urgent{background:#2a0010;border-color:#5a0020;color:var(--pink);animation:pulse .7s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── ROOM (게임 방) ── */
+.room-badge{
+  display:inline-block;margin-bottom:1.2rem;cursor:pointer;
+  background:rgba(0,245,212,.12);border:1px solid rgba(0,245,212,.4);
+  color:var(--cyan);font-size:.78rem;font-weight:700;
+  padding:.3rem .9rem;border-radius:20px;position:relative;z-index:1;transition:all .18s;
+}
+.room-badge:hover{background:rgba(0,245,212,.22);transform:translateY(-1px);}
+#room-screen{align-items:center;padding:1.5rem;}
+.room-wrap{max-width:480px;width:100%;}
+.room-header{text-align:center;margin-bottom:1.4rem;}
+.room-icon{font-size:3rem;animation:float 3s ease-in-out infinite;}
+.room-title{font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#00f5d4,#9b5de5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.room-sub{color:var(--muted);font-size:.82rem;margin-top:.3rem;}
+.room-current{background:var(--panel);border:1px solid var(--border2);border-radius:14px;padding:.9rem 1.1rem;margin-bottom:1.2rem;font-size:.9rem;text-align:center;}
+.room-current b{color:var(--cyan);}
+.room-section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:1rem;}
+.room-section-title{font-size:.85rem;font-weight:700;color:var(--cyan);margin-bottom:.7rem;}
+.room-code-row{display:flex;gap:.5rem;}
+.room-code-row input{
+  flex:1;background:var(--panel2);border:1.5px solid var(--border2);border-radius:12px;
+  color:var(--text);font-size:1.1rem;font-family:inherit;font-weight:700;
+  padding:.7rem .9rem;outline:none;transition:border-color .2s;
+  text-transform:uppercase;letter-spacing:.15em;text-align:center;
+}
+.room-code-row input:focus{border-color:var(--cyan);}
+.room-code-row input.name-style{text-transform:none;letter-spacing:normal;text-align:left;font-size:.95rem;}
+.room-code-display{
+  background:var(--panel2);border:2px dashed var(--cyan);border-radius:14px;
+  padding:1rem;text-align:center;margin-top:.8rem;
+}
+.room-code-big{font-size:2rem;font-weight:900;color:var(--cyan);letter-spacing:.25em;font-family:monospace;}
+.room-code-hint{font-size:.75rem;color:var(--muted);margin-top:.4rem;}
+.room-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.room-item{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;display:flex;align-items:center;gap:.6rem;font-size:.85rem;}
+.room-item.active{border-color:var(--cyan);background:rgba(0,245,212,.06);}
+.room-item-info{flex:1;}
+.room-item-name{font-weight:700;font-size:.88rem;}
+.room-item-code{font-family:monospace;font-size:.75rem;color:var(--cyan);letter-spacing:.1em;}
+.room-item-btns{display:flex;gap:.3rem;flex-shrink:0;}
+.room-mini{padding:.35rem .7rem;border-radius:8px;font-size:.75rem;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .15s;}
+.room-mini.enter{background:var(--cyan);color:#0a0814;}
+.room-mini.enter:hover{filter:brightness(1.1);}
+.room-mini.del{background:transparent;border:1px solid var(--border2);color:var(--muted);}
+.room-mini.del:hover{border-color:var(--red);color:#ff8099;}
+.room-mini.cur{background:transparent;border:1px solid var(--cyan);color:var(--cyan);cursor:default;}
 </style>
 </head>
 <body>
@@ -247,8 +294,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="title-castle">🏰</div>
   <div class="title-logo">말의 왕국을<br>구하라!</div>
   <div class="title-badge">⏱ 40분 수업 · 9품사 RPG · 중학교 1학년</div>
+  <div class="room-badge" id="title-room" onclick="showRoomScreen()">🚪 방: 기본 방</div>
   <div class="btn-row">
     <button class="btn btn-primary" onclick="goName()">⚔️ 모험 시작</button>
+    <button class="btn btn-outline" onclick="showRoomScreen()">🚪 게임 방</button>
     <button class="btn btn-outline" onclick="showRankFromTitle()">🏆 명예의 전당</button>
     <button class="btn btn-outline" onclick="showDictScreen()">📚 9품사 사전</button>
   </div>
@@ -368,13 +417,49 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
+<!-- ══ ROOM (게임 방) ══ -->
+<div id="room-screen" class="screen">
+  <div class="room-wrap">
+    <div class="room-header">
+      <div class="room-icon">🚪</div>
+      <div class="room-title">게임 방</div>
+      <div class="room-sub">방을 만들고 방 코드를 공유하세요!</div>
+    </div>
+    <div class="room-current" id="room-current"></div>
+
+    <div class="room-section">
+      <div class="room-section-title">🔑 방 코드로 입장</div>
+      <div class="room-code-row">
+        <input id="room-code-input" maxlength="4" placeholder="코드 4자리" onkeydown="if(event.key==='Enter')joinByCode()">
+        <button class="btn btn-green" style="padding:.7rem 1.1rem;font-size:.9rem;white-space:nowrap;" onclick="joinByCode()">입장</button>
+      </div>
+      <div id="room-code-error" style="color:var(--red);font-size:.78rem;margin-top:.4rem;display:none;"></div>
+    </div>
+
+    <div class="room-section">
+      <div class="room-section-title">➕ 새 방 만들기</div>
+      <div class="room-code-row">
+        <input id="room-name-input" class="name-style" maxlength="16" placeholder="방 이름 (예: 1반 3교시)" onkeydown="if(event.key==='Enter')createRoom()">
+        <button class="btn btn-primary" style="padding:.7rem 1.1rem;font-size:.9rem;white-space:nowrap;" onclick="createRoom()">만들기</button>
+      </div>
+      <div id="room-created-result" style="display:none;"></div>
+    </div>
+
+    <div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">내 방 목록</div>
+    <div class="room-list" id="room-list"></div>
+    <div style="text-align:center;">
+      <button class="btn btn-outline" onclick="showTitle()">← 돌아가기</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ RANKING ══ -->
 <div id="rank-screen" class="screen">
   <div class="rank-wrap">
     <div class="rank-header">
       <div class="rank-trophy">🏆</div>
       <div class="rank-title">명예의 전당</div>
-      <div style="color:var(--muted);font-size:.82rem;margin-top:.3rem;">우리 반 최고 모험가</div>
+      <div style="color:var(--muted);font-size:.82rem;margin-top:.3rem;" id="rank-roomname">우리 반 최고 모험가</div>
     </div>
     <div class="rank-list" id="rank-list"></div>
     <div style="display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;">
@@ -803,8 +888,44 @@ function showEnding(){
   gb.textContent=badge;gb.style.cssText=badgeStyle;
 }
 
-// ── Ranking (localStorage) ──
-const RANK_KEY='pumsa_ranking_v2';
+// ── Rooms + Ranking (localStorage) ──
+const RANK_KEY='pumsa_ranking_v2';           // (구버전) 전체 공용 랭킹 키 — 기본 방으로 이전
+const ROOMS_KEY='pumsa_rooms_v1';            // 방 목록
+const ACTIVE_ROOM_KEY='pumsa_active_room_v1';// 현재 선택된 방 id
+const DEFAULT_ROOM={id:'default',name:'기본 방'};
+
+// 방별 랭킹 키 (방마다 따로 저장)
+function rankKeyFor(roomId){return RANK_KEY+'::'+roomId;}
+function loadRooms(){try{return JSON.parse(localStorage.getItem(ROOMS_KEY)||'[]');}catch{return[];}}
+function saveRooms(rooms){localStorage.setItem(ROOMS_KEY,JSON.stringify(rooms));}
+function getActiveRoomId(){return localStorage.getItem(ACTIVE_ROOM_KEY)||DEFAULT_ROOM.id;}
+function setActiveRoomId(id){localStorage.setItem(ACTIVE_ROOM_KEY,id);updateRoomBadge();}
+function currentRoomName(){
+  const r=loadRooms().find(x=>x.id===getActiveRoomId());
+  return r?r.name:DEFAULT_ROOM.name;
+}
+function initRooms(){
+  let rooms=loadRooms();
+  if(!rooms.length){
+    rooms=[{...DEFAULT_ROOM,code:generateCode()}];
+    saveRooms(rooms);
+    const legacy=localStorage.getItem(RANK_KEY);
+    if(legacy && !localStorage.getItem(rankKeyFor(DEFAULT_ROOM.id))){
+      localStorage.setItem(rankKeyFor(DEFAULT_ROOM.id),legacy);
+    }
+  }
+  let updated=false;
+  rooms.forEach(r=>{if(!r.code){r.code=generateCode();updated=true;}});
+  if(updated)saveRooms(rooms);
+  if(!rooms.find(r=>r.id===getActiveRoomId())) setActiveRoomId(rooms[0].id);
+  updateRoomBadge();
+}
+function updateRoomBadge(){
+  const el=document.getElementById('title-room');
+  const code=currentRoomCode();
+  if(el) el.textContent='🚪 '+currentRoomName()+' ['+code+']';
+}
+
 // 엔딩 화면과 랭킹 화면이 동일한 등급 규칙을 쓰도록 공통화
 function gradeName(score, bossDefeated){
   if(bossDefeated) return '언어 대마법사';
@@ -815,8 +936,98 @@ function gradeName(score, bossDefeated){
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function loadRanking(){try{return JSON.parse(localStorage.getItem(RANK_KEY)||'[]');}catch{return[];}}
-function saveRanking(data){localStorage.setItem(RANK_KEY,JSON.stringify(data));}
+// 현재 방 기준으로 랭킹 읽기/쓰기
+function loadRanking(){try{return JSON.parse(localStorage.getItem(rankKeyFor(getActiveRoomId()))||'[]');}catch{return[];}}
+function saveRanking(data){localStorage.setItem(rankKeyFor(getActiveRoomId()),JSON.stringify(data));}
+
+// ── Room codes ──
+const CODE_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function generateCode(){
+  const rooms=loadRooms();
+  const existing=new Set(rooms.map(r=>r.code));
+  let code;
+  do{code='';for(let i=0;i<4;i++)code+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];}while(existing.has(code));
+  return code;
+}
+
+// ── Room screen ──
+function showRoomScreen(){
+  document.getElementById('room-code-input').value='';
+  document.getElementById('room-name-input').value='';
+  document.getElementById('room-code-error').style.display='none';
+  document.getElementById('room-created-result').style.display='none';
+  renderRooms();
+  show('room-screen');
+}
+function createRoom(){
+  const input=document.getElementById('room-name-input');
+  const name=input.value.trim();
+  if(!name){input.focus();return;}
+  const rooms=loadRooms();
+  if(rooms.some(r=>r.name===name)){alert('같은 이름의 방이 이미 있어요!');return;}
+  const code=generateCode();
+  const id='r'+Date.now().toString(36);
+  rooms.push({id,name,code});
+  saveRooms(rooms);
+  setActiveRoomId(id);
+  input.value='';
+  const result=document.getElementById('room-created-result');
+  result.style.display='block';
+  result.innerHTML=`<div class="room-code-display"><div style="font-size:.8rem;color:var(--green);font-weight:700;margin-bottom:.3rem;">✅ 방이 만들어졌어요!</div><div class="room-code-big">${code}</div><div class="room-code-hint">이 코드를 친구들에게 알려주세요</div></div>`;
+  renderRooms();
+}
+function joinByCode(){
+  const input=document.getElementById('room-code-input');
+  const code=input.value.trim().toUpperCase();
+  const errEl=document.getElementById('room-code-error');
+  if(!code||code.length!==4){errEl.textContent='4자리 코드를 입력하세요';errEl.style.display='block';input.focus();return;}
+  const rooms=loadRooms();
+  const room=rooms.find(r=>r.code===code);
+  if(!room){errEl.textContent='해당 코드의 방을 찾을 수 없어요';errEl.style.display='block';input.focus();return;}
+  errEl.style.display='none';
+  setActiveRoomId(room.id);
+  input.value='';
+  renderRooms();
+}
+function enterRoom(id){setActiveRoomId(id);renderRooms();}
+function deleteRoom(id){
+  const rooms=loadRooms();
+  const room=rooms.find(r=>r.id===id);
+  if(!room)return;
+  if(!confirm(`"${room.name}" 방과 그 방의 랭킹을 삭제할까요?`))return;
+  const left=rooms.filter(r=>r.id!==id);
+  localStorage.removeItem(rankKeyFor(id));
+  if(!left.length){left.push({...DEFAULT_ROOM,code:generateCode()});}
+  saveRooms(left);
+  if(getActiveRoomId()===id) setActiveRoomId(left[0].id);
+  renderRooms();
+}
+function currentRoomCode(){
+  const r=loadRooms().find(x=>x.id===getActiveRoomId());
+  return r&&r.code?r.code:'—';
+}
+function renderRooms(){
+  const rooms=loadRooms();
+  const activeId=getActiveRoomId();
+  const activeRoom=rooms.find(r=>r.id===activeId);
+  const codeDisp=activeRoom&&activeRoom.code?` · 코드: <b style="font-family:monospace;letter-spacing:.1em;">${activeRoom.code}</b>`:'';
+  document.getElementById('room-current').innerHTML=`현재 방: <b>${escapeHtml(currentRoomName())}</b>${codeDisp}<br><span style="font-size:.75rem;color:var(--muted);">이 방에서 플레이한 점수가 이 방 랭킹에 기록돼요</span>`;
+  document.getElementById('room-list').innerHTML=rooms.map(r=>{
+    const cnt=(()=>{try{return JSON.parse(localStorage.getItem(rankKeyFor(r.id))||'[]').length;}catch{return 0;}})();
+    const active=r.id===activeId;
+    return `<div class="room-item${active?' active':''}">
+      <div class="room-item-info">
+        <div class="room-item-name">🚪 ${escapeHtml(r.name)}</div>
+        <div class="room-item-code">${r.code||'—'} · ${cnt}명${active?' · 현재':''}
+        </div>
+      </div>
+      <div class="room-item-btns">
+        ${active?'<button class="room-mini cur">현재</button>':`<button class="room-mini enter" onclick="enterRoom('${r.id}')">입장</button>`}
+        <button class="room-mini del" onclick="deleteRoom('${r.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 function saveScore(){
   const data=loadRanking();
   const grade=gradeName(score, bossHp<=0);
@@ -829,6 +1040,8 @@ function saveScore(){
 function goRanking(){renderRanking();show('rank-screen');}
 function renderRanking(){
   const data=loadRanking();
+  const rn=document.getElementById('rank-roomname');
+  if(rn) rn.textContent='🚪 '+currentRoomName()+' · 우리 반 최고 모험가';
   const medals=['🥇','🥈','🥉'];
   // 저장된 등급이 있으면 그대로, 옛 기록은 점수 기준으로 보정
   const grades=(r)=>r.grade||gradeName(r.score,false);
@@ -848,7 +1061,10 @@ function renderRanking(){
       <div class="rank-pts">${r.score}점</div>
     </div>`).join('');
 }
-function clearRanking(){if(confirm('랭킹을 초기화할까요?')){saveRanking([]);renderRanking();}}
+function clearRanking(){if(confirm(`"${currentRoomName()}" 방의 랭킹을 초기화할까요?`)){saveRanking([]);renderRanking();}}
+
+// 방 시스템 초기화 (기본 방 생성 + 구버전 랭킹 이전 + 타이틀 뱃지 갱신)
+initRooms();
 </script>
 </body>
 </html>
