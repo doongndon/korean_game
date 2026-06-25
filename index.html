@@ -303,6 +303,39 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 @keyframes toastPop{0%{opacity:0;transform:translateX(-50%) translateY(-22px) scale(.9)}12%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}82%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
 .pvp-note{background:rgba(247,37,133,.1);border:1px solid rgba(247,37,133,.35);border-radius:12px;
   padding:.6rem .9rem;margin-bottom:1rem;font-size:.78rem;color:#ff9ec0;line-height:1.5;text-align:center;}
+
+/* ── 유물(Relic) + 보물상자 ── */
+.chest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;max-width:420px;margin:0 auto;}
+.chest{background:linear-gradient(160deg,#2a1f55,#181134);border:2px solid var(--border2);border-radius:16px;
+  padding:1.3rem .4rem;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;font-family:inherit;}
+.chest:hover:not(:disabled){transform:translateY(-5px) scale(1.04);border-color:var(--yellow);box-shadow:0 8px 26px rgba(255,209,102,.4);}
+.chest:disabled{cursor:default;}
+.chest .chest-ico{font-size:2.6rem;animation:chestWiggle 1.2s ease-in-out infinite;}
+@keyframes chestWiggle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.chest .chest-lbl{font-size:.72rem;color:var(--muted);font-weight:700;margin-top:.3rem;}
+.chest.opened{opacity:.45;transform:scale(.92);}
+.chest.opened.picked{opacity:1;transform:scale(1);}
+.relic-reveal-card{margin:1.2rem auto 0;max-width:360px;border-radius:18px;padding:1.4rem;text-align:center;
+  border:2px solid var(--c,#888);background:radial-gradient(ellipse at 50% 20%,var(--g,rgba(255,255,255,.12)),#13102a 75%);
+  animation:relicPop .5s cubic-bezier(.2,1.5,.4,1);}
+@keyframes relicPop{0%{transform:scale(.5) rotate(-12deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.relic-reveal-card .r-emoji{font-size:3.4rem;filter:drop-shadow(0 0 12px var(--g,#fff));}
+.relic-reveal-card .r-tier{display:inline-block;font-size:.72rem;font-weight:900;letter-spacing:.1em;padding:.15rem .7rem;border-radius:12px;margin:.4rem 0;}
+.relic-reveal-card .r-name{font-size:1.25rem;font-weight:900;}
+.relic-reveal-card .r-atk{font-size:1rem;font-weight:700;color:var(--pink);margin-top:.2rem;}
+.relic-bag{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem;}
+.relic-chip{font-size:.74rem;font-weight:700;padding:.2rem .55rem;border-radius:20px;border:1px solid var(--c,#888);
+  background:var(--g,rgba(255,255,255,.08));display:inline-flex;align-items:center;gap:.25rem;}
+.combo-badge{background:linear-gradient(135deg,#ff6b35,#ffd166);color:#0a0814;font-weight:900;font-size:.8rem;
+  padding:.2rem .6rem;border-radius:16px;box-shadow:0 0 12px rgba(255,107,53,.6);}
+.combo-pop{position:fixed;top:30%;left:50%;transform:translateX(-50%);z-index:60;font-size:2.4rem;font-weight:900;
+  color:#ffd166;text-shadow:0 0 18px #ff6b35;pointer-events:none;animation:comboUp .8s ease forwards;}
+@keyframes comboUp{0%{opacity:0;transform:translateX(-50%) scale(.4)}25%{opacity:1;transform:translateX(-50%) scale(1.2)}100%{opacity:0;transform:translateX(-50%) scale(1) translateY(-40px)}}
+.confetti{position:fixed;top:-12vh;width:11px;height:11px;border-radius:2px;z-index:80;pointer-events:none;
+  animation:confettiFall 2.5s linear forwards;}
+@keyframes confettiFall{0%{opacity:1}100%{opacity:.9;transform:translateY(120vh) rotate(720deg)}}
+.sound-toggle{position:fixed;bottom:12px;right:12px;z-index:70;background:var(--panel);border:1px solid var(--border2);
+  color:var(--text);border-radius:50%;width:42px;height:42px;font-size:1.1rem;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -350,9 +383,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="hud-name" id="hud-name">플레이어</div>
     <div class="progress-row" id="progress-row"></div>
     <div class="hud-stage" id="hud-stage"></div>
-    <div class="hud-hp" id="hud-hp">❤️❤️❤️</div>
     <div class="timer-badge" id="timer-badge">⏱ --:--</div>
-    <div class="hud-score">⭐<span id="score-disp">0</span></div>
+    <div class="hud-score" style="background:#3a1a40;color:var(--pink)">⚔️<span id="atk-disp">0</span></div>
   </div>
   <div class="game-body">
     <div class="story-card">
@@ -380,23 +412,25 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
-<!-- ══ BOSS ══ -->
+<!-- ══ RAID (레이드 보스) ══ -->
 <div id="boss-screen" class="screen">
   <div class="hud">
     <div class="hud-name" id="boss-hud-name">플레이어</div>
-    <div class="hud-hp" id="boss-hud-hp">❤️❤️❤️</div>
+    <div class="combo-badge" id="combo-badge" style="display:none;">🔥 <span id="combo-disp">0</span> COMBO</div>
+    <div class="hud-stage" id="raid-progress" style="flex:1;text-align:right;"></div>
     <div class="timer-badge" id="boss-timer-badge">⏱ --:--</div>
-    <div class="hud-score">⭐<span id="boss-score-disp">0</span></div>
+    <div class="hud-score" style="background:#3a1a40;color:var(--pink)">⚔️<span id="boss-atk-disp">0</span></div>
+    <div class="hud-score" style="background:#2a1a00;color:var(--yellow)">💥<span id="dmg-disp">0</span></div>
   </div>
   <div class="boss-wrap">
     <div class="boss-header">
-      <div class="boss-label" id="boss-label">BOSS BATTLE</div>
+      <div class="boss-label" id="boss-label">⚔️ 레이드 보스</div>
       <div class="boss-name" id="boss-name">어둠의 대마왕</div>
     </div>
     <div>
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
         <span style="font-size:.8rem;color:var(--pink);font-weight:700;">👹 BOSS HP</span>
-        <span class="boss-hp-text" id="boss-hp-text">15 / 15</span>
+        <span class="boss-hp-text" id="boss-hp-text">100%</span>
       </div>
       <div class="boss-hp-bar"><div class="boss-hp-fill" id="boss-hp-fill" style="width:100%"></div></div>
     </div>
@@ -419,16 +453,58 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
+<!-- ══ RELIC (유물 획득) ══ -->
+<div id="relic-screen" class="screen">
+  <div class="hud">
+    <div class="hud-name" id="relic-hud-name">플레이어</div>
+    <div class="hud-stage" id="relic-progress" style="flex:1;"></div>
+    <div class="timer-badge" id="relic-timer-badge">⏱ --:--</div>
+    <div class="hud-score" style="background:#3a1a40;color:var(--pink)">⚔️<span id="relic-atk-disp">0</span></div>
+  </div>
+  <div class="game-body">
+    <div class="boss-header">
+      <div class="boss-label" style="color:var(--cyan)">🏺 유물의 방</div>
+      <div class="boss-name" style="font-size:1.3rem">문제를 맞히면 보물상자를 열 수 있어요!</div>
+    </div>
+
+    <div id="relic-q-card" class="boss-qcard">
+      <div class="boss-qtag" style="background:rgba(0,245,212,.2);color:var(--cyan)">📜 유물 문제</div>
+      <div class="boss-q" id="relic-q">문제 로딩 중...</div>
+      <div class="boss-choices" id="relic-choices"></div>
+      <div class="boss-feedback" id="relic-feedback">
+        <div class="fb-title" id="relic-fb-title"></div>
+        <div id="relic-fb-body"></div>
+      </div>
+      <div class="boss-next-row" id="relic-next-row" style="display:none;margin-top:.6rem;">
+        <button class="btn btn-primary" onclick="nextRelicQ()" id="relic-next-btn">다음 →</button>
+      </div>
+    </div>
+
+    <div id="chest-area" style="display:none;text-align:center;">
+      <div style="font-weight:900;font-size:1.1rem;color:var(--yellow);margin:.4rem 0 1rem;">✨ 보물상자 3개 중 1개를 선택하세요!</div>
+      <div class="chest-grid" id="chest-grid"></div>
+      <div id="relic-reveal" style="display:none;"></div>
+      <div id="chest-next-row" style="display:none;text-align:center;margin-top:1rem;">
+        <button class="btn btn-primary" onclick="nextRelicQ()">다음 →</button>
+      </div>
+    </div>
+
+    <div class="relic-bag" id="relic-bag"></div>
+  </div>
+</div>
+
 <!-- ══ ENDING ══ -->
 <div id="ending-screen" class="screen">
   <div class="end-emoji" id="end-emoji">🏆</div>
   <div class="end-title" id="end-title">말의 왕국을 구했다!</div>
   <div class="end-sub" id="end-sub"></div>
   <div class="end-score-box">
-    <div class="end-score-big" id="end-score-big">0점</div>
-    <div class="end-score-label">총 점수 (스테이지 + 보스전)</div>
+    <div class="end-score-big" id="end-score-big">0</div>
+    <div class="end-score-label">💥 보스에게 넣은 총 데미지</div>
     <div class="end-badge" id="end-badge">🥇 언어 대마법사</div>
+    <div id="end-rank-line" style="margin-top:.7rem;font-weight:700;color:var(--cyan);"></div>
   </div>
+  <div id="end-relics" class="relic-bag" style="justify-content:center;margin-bottom:1.2rem;"></div>
   <div class="end-row">
     <button class="btn btn-primary" onclick="goRanking()">🏆 랭킹 보기</button>
     <button class="btn btn-outline" onclick="restartGame()">🔄 다시 도전</button>
@@ -443,25 +519,33 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="room-icon">🚪</div>
       <div class="room-title">게임 방</div>
       <div class="room-sub">방을 만들고 방 코드를 공유하세요!</div>
+      <div id="net-status" style="font-size:.74rem;font-weight:700;margin-top:.5rem;"></div>
     </div>
     <div class="room-current" id="room-current"></div>
 
     <div id="room-start-section" style="display:none;margin-bottom:1.2rem;">
-      <div id="room-start-teacher" style="display:none;">
-        <button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:1rem;" onclick="teacherStartGame()">🎮 게임 시작! (학생들에게 시작 신호 보내기)</button>
+      <!-- 선생님(방장) -->
+      <div id="room-start-host" style="display:none;background:rgba(155,93,229,.1);border:1px solid rgba(155,93,229,.4);border-radius:14px;padding:1.1rem;text-align:center;">
+        <div style="font-weight:900;color:var(--purple);margin-bottom:.2rem;">👩‍🏫 선생님(방장) 화면</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.8rem;">학생들이 모두 입장하면 시작 버튼을 누르세요!</div>
+        <button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:1rem;" onclick="hostStartGame()">🎮 게임 시작! (모든 학생 출발)</button>
         <button class="btn btn-yellow" style="width:100%;font-size:1rem;padding:.85rem;margin-top:.6rem;" onclick="showFinalRanking()">🏆 최종 순위 발표</button>
+        <div id="host-started-note" style="display:none;font-size:.8rem;color:var(--green);font-weight:700;margin-top:.7rem;">✅ 시작 신호를 보냈어요! 학생들이 게임을 시작합니다.</div>
       </div>
-      <div id="room-start-student" style="display:none;">
-        <div style="background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.35);border-radius:14px;padding:1.2rem;text-align:center;">
-          <div style="font-size:2rem;animation:pulse .7s ease-in-out infinite;">⏳</div>
-          <div style="font-weight:700;color:var(--yellow);margin:.5rem 0;">선생님이 시작하라고 할 때까지 기다려주세요!</div>
-          <div style="font-size:.78rem;color:var(--muted);">선생님이 "시작!"이라고 하면 아래 버튼을 눌러주세요</div>
-          <button class="btn btn-primary" style="margin-top:1rem;width:100%;font-size:1rem;padding:.85rem;" onclick="goName()">🎮 게임 시작!</button>
-        </div>
+      <!-- 학생 (온라인 대기) -->
+      <div id="room-start-student" style="display:none;background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.35);border-radius:14px;padding:1.2rem;text-align:center;">
+        <div style="font-size:2rem;animation:pulse .7s ease-in-out infinite;">⏳</div>
+        <div style="font-weight:700;color:var(--yellow);margin:.5rem 0;">선생님이 시작하면 자동으로 시작돼요!</div>
+        <div style="font-size:.78rem;color:var(--muted);">잠깐만 기다려 주세요…</div>
+      </div>
+      <!-- 오프라인(같은 기기) -->
+      <div id="room-start-solo" style="display:none;background:rgba(0,245,212,.08);border:1px solid rgba(0,245,212,.3);border-radius:14px;padding:1rem;text-align:center;">
+        <button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:1rem;" onclick="goName()">🎮 게임 시작!</button>
+        <button class="btn btn-yellow" style="width:100%;font-size:1rem;padding:.85rem;margin-top:.6rem;" onclick="showFinalRanking()">🏆 최종 순위 발표</button>
       </div>
     </div>
 
-    <div class="pvp-note">⚔️ <b>대전 모드</b>: 같은 방 친구들과 동시에 플레이하면, 내가 정답을 맞힐 때마다 친구들 화면에 방해 공격(흔들기·먹물·뒤집기 등)이 날아가요!<br><span style="font-size:.7rem;opacity:.8;">※ 같은 기기(여러 탭/창)에서 작동해요</span></div>
+    <div class="pvp-note">🏺 <b>유물 + 레이드 모드</b>: 모험 → <b>유물의 방</b>(문제 맞히면 보물상자에서 유물 획득! 등급·꽝 있음, 공격력 ⬆) → <b>레이드 보스</b>! 데미지를 가장 많이 넣은 친구가 1·2·3등 🏆<br><span style="font-size:.7rem;opacity:.8;">※ 온라인(파이어베이스) 연결 시 다른 기기끼리 실시간으로 함께 플레이해요</span></div>
 
     <div class="room-section">
       <div class="room-section-title">🔑 방 코드로 입장</div>
@@ -473,25 +557,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
 
     <div class="room-section">
-      <div class="room-section-title">🔒 선생님 전용 — 새 방 만들기</div>
-      <div id="teacher-lock">
-        <div class="room-code-row">
-          <input id="teacher-pw-input" class="name-style" type="password" maxlength="20" placeholder="선생님 비밀번호" onkeydown="if(event.key==='Enter')unlockTeacher()">
-          <button class="btn btn-yellow" style="padding:.7rem 1.1rem;font-size:.9rem;white-space:nowrap;" onclick="unlockTeacher()">잠금 해제</button>
-        </div>
-        <div id="teacher-pw-error" style="color:var(--red);font-size:.78rem;margin-top:.4rem;display:none;"></div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:.4rem;">처음 사용 시 입력한 비밀번호가 선생님 비밀번호로 등록됩니다</div>
+      <div class="room-section-title">🏫 새 방 만들기 (선생님)</div>
+      <div class="room-code-row">
+        <input id="room-name-input" class="name-style" maxlength="16" placeholder="방 이름 (예: 1반 3교시)" onkeydown="if(event.key==='Enter')createRoom()">
+        <button class="btn btn-primary" style="padding:.7rem 1.1rem;font-size:.9rem;white-space:nowrap;" onclick="createRoom()">만들기</button>
       </div>
-      <div id="teacher-unlocked" style="display:none;">
-        <div class="room-code-row">
-          <input id="room-name-input" class="name-style" maxlength="16" placeholder="방 이름 (예: 1반 3교시)" onkeydown="if(event.key==='Enter')createRoom()">
-          <button class="btn btn-primary" style="padding:.7rem 1.1rem;font-size:.9rem;white-space:nowrap;" onclick="createRoom()">만들기</button>
-        </div>
-        <div id="room-created-result" style="display:none;"></div>
-        <div style="margin-top:.6rem;text-align:right;">
-          <button class="btn btn-outline" style="padding:.3rem .7rem;font-size:.72rem;" onclick="resetTeacherPw()">비밀번호 변경</button>
-        </div>
-      </div>
+      <div id="room-created-result" style="display:none;"></div>
     </div>
 
     <div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">내 방 목록</div>
@@ -518,7 +589,29 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
+<button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="소리 켜기/끄기">🔊</button>
+
+<!-- ══ Firebase SDK (실시간 백엔드) ══ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <script>
+// ══════════════════════════════════════════════
+//  ⬇⬇⬇ 선생님: 여기에 Firebase 설정을 붙여넣으세요 ⬇⬇⬇
+//  Firebase 콘솔 → 프로젝트 설정 → "내 앱"의 firebaseConfig 를 복사해서
+//  아래 빈칸을 채우면 자동으로 "온라인 모드"(다른 기기끼리 실시간)로 작동합니다.
+//  databaseURL 까지 채워야 켜집니다. 비워두면 지금처럼 오프라인 모드예요.
+// ══════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBApREgISNTpemA-xFclt9Vdrax89MMlgg",
+  authDomain: "koreangame.firebaseapp.com",
+  databaseURL: "https://koreangame-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "koreangame",
+  storageBucket: "koreangame.firebasestorage.app",
+  messagingSenderId: "814550222291",
+  appId: "1:814550222291:web:a9eb135cc941e305229b26",
+  measurementId: "G-BQHJTLL5PD"
+};
 // ══════════════════════════════════════════════
 //  DATA
 // ══════════════════════════════════════════════
@@ -645,44 +738,78 @@ const BOSS_QS_BANK = [
   {q:'체언에 속하는 품사끼리 묶인 것은?',choices:['명사+대명사+수사','동사+형용사','관형사+부사','조사+감탄사'],answer:0,fb:'체언은 명사·대명사·수사입니다!'},
 ];
 
-// 보스전마다 문제 은행에서 무작위로 골라 출제
-const BOSS_ASK_COUNT = 25;        // 한 판에 출제할 문제 수 (보스 HP)
-let BOSS_QS = [];
-let BOSS_TOTAL_HP = BOSS_ASK_COUNT;
-function pickBossQuestions(){
-  const pool=[...BOSS_QS_BANK];
-  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
-  BOSS_QS = pool.slice(0, Math.min(BOSS_ASK_COUNT, pool.length));
-  BOSS_TOTAL_HP = BOSS_QS.length;
-}
-
 // ══════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════
-let playerName = '모험가';
-let stage = 0;
-let score = 0;
-let hp = 3;
-let answered = false;
-let bossHp = BOSS_TOTAL_HP;
-let bossQIdx = 0;
-let bossAnswered = false;
-let timerInterval = null;
-let secondsLeft = 0;
+let playerName='모험가';
+let stage=0, stageCorrect=0, answered=false;
+let baseATK=0, relicATK=0, myRelics=[];
+let timerInterval=null, secondsLeft=0;
+let soundOn=true;
+
+// 유물 라운드 / 레이드
+let relicQs=[], relicIdx=0, relicAnswered=false, pendingChests=null;
+let raidQs=[], raidIdx=0, raidAnswered=false;
+let myDamage=0, combo=0, bestCombo=0, localBossHp=0;
+
+const RELIC_ROUND_COUNT=5;
+const RAID_COUNT=10;
+const STAGE_ATK=3;
+const BASE_DMG=25;
+const ROOM_BOSS_HP=8000;
+const LOCAL_BOSS_HP=1500;
+function totalATK(){return baseATK+relicATK;}
 
 // ══════════════════════════════════════════════
 //  STARS
 // ══════════════════════════════════════════════
 (function(){
-  const c = document.getElementById('stars-bg');
+  const c=document.getElementById('stars-bg');
   for(let i=0;i<100;i++){
-    const s = document.createElement('div');
-    s.className='star';
-    const sz = Math.random()*2+1;
+    const s=document.createElement('div');s.className='star';const sz=Math.random()*2+1;
     s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*3}s;--dl:${Math.random()*3}s;background:rgba(255,255,255,${.4+Math.random()*.6})`;
     c.appendChild(s);
   }
 })();
+
+// ══════════════════════════════════════════════
+//  SOUND (WebAudio — 파일 없이 효과음)
+// ══════════════════════════════════════════════
+let _actx=null;
+function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sound-toggle');if(b)b.textContent=soundOn?'🔊':'🔇';}
+function beep(freq,dur,type,vol){
+  if(!soundOn)return;
+  try{
+    _actx=_actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=_actx.createOscillator(),g=_actx.createGain();
+    o.type=type||'sine';o.frequency.value=freq;o.connect(g);g.connect(_actx.destination);
+    g.gain.value=vol||0.06;o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001,_actx.currentTime+dur);o.stop(_actx.currentTime+dur);
+  }catch(_){}
+}
+function sfxCorrect(){beep(660,0.12);setTimeout(()=>beep(990,0.13),90);}
+function sfxWrong(){beep(160,0.25,'sawtooth');}
+function sfxHit(){beep(280,0.08,'square',0.05);setTimeout(()=>beep(440,0.08,'square',0.05),60);}
+function sfxOpen(){beep(523,0.1,'triangle');setTimeout(()=>beep(784,0.12,'triangle'),100);}
+function sfxLegend(){[523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'triangle'),i*100));}
+
+// ══════════════════════════════════════════════
+//  FX (컨페티 / 콤보 팝업)
+// ══════════════════════════════════════════════
+function confetti(n){
+  for(let i=0;i<(n||50);i++){
+    const d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'vw';
+    d.style.background=`hsl(${Math.random()*360},90%,60%)`;
+    d.style.animationDelay=(Math.random()*0.4)+'s';
+    d.style.animationDuration=(1.8+Math.random()*1.4)+'s';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),3400);
+  }
+}
+function comboPop(text){
+  const d=document.createElement('div');d.className='combo-pop';d.textContent=text;
+  document.body.appendChild(d);setTimeout(()=>d.remove(),800);
+}
 
 // ══════════════════════════════════════════════
 //  SCREENS
@@ -692,15 +819,13 @@ function showTitle(){stopTimer();show('title-screen');}
 function showDictScreen(){buildDict();show('dict-screen');}
 function goName(){
   if(!hasJoinedRoom()){alert('먼저 방에 입장해야 게임을 시작할 수 있어요!');showRoomScreen();return;}
-  show('name-screen');setTimeout(()=>document.getElementById('player-name-input').focus(),200);
+  show('name-screen');setTimeout(()=>{const el=document.getElementById('player-name-input');if(el)el.focus();},200);
 }
 function showRankFromTitle(){renderRanking();show('rank-screen');}
 
-// ══════════════════════════════════════════════
-//  DICT
-// ══════════════════════════════════════════════
+// ── DICT ──
 function buildDict(){
-  document.getElementById('dict-grid').innerHTML = DICT_DATA.map(d=>`
+  document.getElementById('dict-grid').innerHTML=DICT_DATA.map(d=>`
     <div class="dcard">
       <div class="dcard-icon">${d.icon}</div>
       <div class="dcard-name">${d.name} (${d.en})</div>
@@ -713,382 +838,415 @@ function buildDict(){
 //  TIMER (40분 = 2400초)
 // ══════════════════════════════════════════════
 function startTimer(secs){
-  stopTimer();
-  secondsLeft = secs;
-  updateTimerUI();
-  timerInterval = setInterval(()=>{
-    secondsLeft--;
-    updateTimerUI();
-    if(secondsLeft<=0){stopTimer();timeUp();}
-  },1000);
+  stopTimer();secondsLeft=secs;updateTimerUI();
+  timerInterval=setInterval(()=>{secondsLeft--;updateTimerUI();if(secondsLeft<=0){stopTimer();timeUp();}},1000);
 }
 function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}}
 function updateTimerUI(){
   const m=String(Math.floor(secondsLeft/60)).padStart(2,'0');
   const s=String(secondsLeft%60).padStart(2,'0');
-  const txt=`⏱ ${m}:${s}`;
-  const urgent = secondsLeft<=120;
-  ['timer-badge','boss-timer-badge'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.textContent=txt;el.className='timer-badge'+(urgent?' urgent':'');}
+  const txt=`⏱ ${m}:${s}`;const urgent=secondsLeft<=120;
+  ['timer-badge','boss-timer-badge','relic-timer-badge'].forEach(id=>{
+    const el=document.getElementById(id);if(el){el.textContent=txt;el.className='timer-badge'+(urgent?' urgent':'');}
   });
 }
-function timeUp(){
-  // 시간 초과 → 엔딩으로
-  showEnding();
+function timeUp(){showEnding();}
+
+function updateAtkDisplays(){
+  const a=totalATK();
+  ['atk-disp','boss-atk-disp','relic-atk-disp'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=a;});
+}
+
+// ══════════════════════════════════════════════
+//  RELIC DATA (유물 — 등급/꽝)
+// ══════════════════════════════════════════════
+const RELIC_TIERS=[
+  {key:'dud',name:'꽝',atk:0,color:'#6b6390',glow:'rgba(120,110,160,.4)',emoji:'💨',items:['텅 빈 상자','먼지 뭉치','구멍난 양말','상한 빵','돌멩이']},
+  {key:'common',name:'일반',atk:6,color:'#06d6a0',glow:'rgba(6,214,160,.45)',emoji:'🗡️',items:['청동 단검','나무 방패','견습의 부적','가죽 장갑','사냥꾼의 활']},
+  {key:'rare',name:'레어',atk:14,color:'#4dabf7',glow:'rgba(77,171,247,.5)',emoji:'🔷',items:['은빛 룬','마법 수정','바람의 깃털','서리 반지','수호자의 목걸이']},
+  {key:'epic',name:'에픽',atk:28,color:'#b06bff',glow:'rgba(176,107,255,.55)',emoji:'🟣',items:['용기사의 검','폭풍의 망토','고대 룬석','현자의 보주','심연의 갑옷']},
+  {key:'legend',name:'전설',atk:55,color:'#ffd166',glow:'rgba(255,209,102,.7)',emoji:'🌟',items:['신룡의 발톱','왕가의 성검','불멸의 심장','태양의 왕관','창세의 룬']},
+];
+const RELIC_WEIGHTS=[24,34,23,13,6];
+function rollRelic(){
+  let r=Math.random()*100,acc=0,t=RELIC_TIERS[0];
+  for(let i=0;i<RELIC_TIERS.length;i++){acc+=RELIC_WEIGHTS[i];if(r<acc){t=RELIC_TIERS[i];break;}}
+  const name=t.items[Math.floor(Math.random()*t.items.length)];
+  return {tier:t.key,tierName:t.name,atk:t.atk,color:t.color,glow:t.glow,emoji:t.emoji,name};
+}
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pickRoundQuestions(){
+  const pool=shuffle(BOSS_QS_BANK);
+  relicQs=pool.slice(0,RELIC_ROUND_COUNT);
+  raidQs=pool.slice(RELIC_ROUND_COUNT,RELIC_ROUND_COUNT+RAID_COUNT);
+  while(raidQs.length<RAID_COUNT){raidQs=raidQs.concat(shuffle(BOSS_QS_BANK).slice(0,RAID_COUNT-raidQs.length));}
 }
 
 // ══════════════════════════════════════════════
 //  GAME START
 // ══════════════════════════════════════════════
 function startGame(){
-  const n = document.getElementById('player-name-input').value.trim();
-  playerName = n || '모험가';
-  stage = 0; score = 0; hp = 3; answered = false;
-  startTimer(2400); // 40분
+  const n=document.getElementById('player-name-input').value.trim();
+  playerName=n||'모험가';
+  stage=0;stageCorrect=0;answered=false;
+  baseATK=0;relicATK=0;myRelics=[];
+  relicIdx=0;raidIdx=0;myDamage=0;combo=0;bestCombo=0;
+  pickRoundQuestions();
+  startTimer(2400);
+  updateAtkDisplays();
   show('game-screen');
   renderStage();
 }
-function restartGame(){
-  document.getElementById('player-name-input').value = playerName;
-  goName();
-}
+function restartGame(){document.getElementById('player-name-input').value=playerName;goName();}
 
 // ══════════════════════════════════════════════
-//  STAGE
+//  STAGE (학습 모험)
 // ══════════════════════════════════════════════
 function renderStage(){
-  const s = STAGES[stage];
-  answered = false;
-  document.getElementById('hud-name').textContent = playerName;
-  document.getElementById('hud-stage').textContent = `STAGE ${stage+1}/9 · ${s.title}`;
-  document.getElementById('score-disp').textContent = score;
-  document.getElementById('s-avatar').textContent = s.avatar;
-  document.getElementById('s-speaker').textContent = s.speaker;
-  document.getElementById('s-text').textContent = s.story;
-  document.getElementById('mission-q').textContent = s.q;
-  document.getElementById('mission-hint').textContent = '💡 '+s.hint;
-  updateHpUI();
-  buildProgress();
-
-  const grid = document.getElementById('choices');
-  grid.innerHTML = s.choices.map((c,i)=>`
+  const s=STAGES[stage];answered=false;
+  document.getElementById('hud-name').textContent=playerName;
+  document.getElementById('hud-stage').textContent=`STAGE ${stage+1}/9 · ${s.title}`;
+  document.getElementById('s-avatar').textContent=s.avatar;
+  document.getElementById('s-speaker').textContent=s.speaker;
+  document.getElementById('s-text').textContent=s.story;
+  document.getElementById('mission-q').textContent=s.q;
+  document.getElementById('mission-hint').textContent='💡 '+s.hint;
+  updateAtkDisplays();buildProgress();
+  const grid=document.getElementById('choices');
+  grid.innerHTML=s.choices.map((c,i)=>`
     <button class="choice" onclick="choose(${i})">
       <span class="cnum">${['①','②','③','④'][i]}</span><span>${c}</span>
     </button>`).join('');
-
-  const fb = document.getElementById('feedback');
-  fb.className='feedback'; fb.style.display='none';
+  const fb=document.getElementById('feedback');fb.className='feedback';fb.style.display='none';
   document.getElementById('next-row').style.display='none';
 }
-
 function buildProgress(){
-  document.getElementById('progress-row').innerHTML = STAGES.map((_,i)=>{
-    let cls='pdot';
-    if(i<stage)cls+=' done';
-    else if(i===stage)cls+=' current';
-    return `<div class="${cls}"></div>`;
+  document.getElementById('progress-row').innerHTML=STAGES.map((_,i)=>{
+    let cls='pdot';if(i<stage)cls+=' done';else if(i===stage)cls+=' current';return `<div class="${cls}"></div>`;
   }).join('');
 }
-
-function updateHpUI(){
-  document.getElementById('hud-hp').textContent = '❤️'.repeat(hp)||'💔';
-  document.getElementById('boss-hud-hp').textContent = '❤️'.repeat(hp)||'💔';
-}
-
 function choose(idx){
-  if(answered)return;
-  answered=true;
+  if(answered)return;answered=true;
   const s=STAGES[stage];
   document.querySelectorAll('.choice').forEach(b=>b.disabled=true);
-  const correct = idx===s.answer;
+  const correct=idx===s.answer;
   document.querySelectorAll('.choice')[idx].classList.add(correct?'correct':'wrong');
-  if(!correct) document.querySelectorAll('.choice')[s.answer].classList.add('correct');
-  if(correct){score+=10;sendAttack();}
-  else{hp=Math.max(0,hp-1);}
-  updateHpUI();
-  document.getElementById('score-disp').textContent=score;
-
-  const fb=document.getElementById('feedback');
-  fb.style.display='block';
+  if(!correct)document.querySelectorAll('.choice')[s.answer].classList.add('correct');
+  if(correct){stageCorrect++;baseATK+=STAGE_ATK;updateAtkDisplays();sfxCorrect();}
+  else sfxWrong();
+  const fb=document.getElementById('feedback');fb.style.display='block';
   fb.className='feedback '+(correct?'ok':'ng');
-  document.getElementById('fb-title').textContent=correct?'✅ 정답! +10점':'❌ 틀렸어요! ❤️ -1';
+  document.getElementById('fb-title').textContent=correct?`✅ 정답! ⚔️ 공격력 +${STAGE_ATK}`:'❌ 아쉬워요!';
   document.getElementById('fb-body').textContent=s.fb;
   document.getElementById('next-row').style.display='block';
 }
-
 function nextStage(){
   stage++;
-  if(stage>=STAGES.length){
-    // 9스테이지 완료 → 보스전
-    startBoss();
-  } else {
-    renderStage();
-  }
+  if(stage>=STAGES.length)startRelicRound();
+  else renderStage();
 }
 
 // ══════════════════════════════════════════════
-//  BOSS
+//  RELIC ROUND (유물의 방)
 // ══════════════════════════════════════════════
-function startBoss(){
-  pickBossQuestions();
-  bossHp = BOSS_TOTAL_HP;
-  bossQIdx = 0;
-  bossAnswered = false;
-  show('boss-screen');
-  document.getElementById('boss-hud-name').textContent = playerName;
-  document.getElementById('boss-hud-hp').textContent = '❤️'.repeat(hp)||'💔';
-  document.getElementById('boss-score-disp').textContent = score;
-  document.getElementById('boss-label').textContent = '⚔️ FINAL BOSS BATTLE';
-  document.getElementById('boss-name').textContent = '👹 어둠의 대마왕 그림자';
-  document.getElementById('boss-fig').textContent = '👹';
-  document.getElementById('boss-fig').className = 'boss-fig';
-  document.getElementById('boss-status').textContent = '크크크... 감히 여기까지 왔느냐!';
-  updateBossHpBar();
-  renderBossQ();
-}
-
-function updateBossHpBar(){
-  const pct = bossHp/BOSS_TOTAL_HP*100;
-  document.getElementById('boss-hp-fill').style.width = pct+'%';
-  document.getElementById('boss-hp-text').textContent = `${bossHp} / ${BOSS_TOTAL_HP}`;
-  document.getElementById('boss-score-disp').textContent = score;
-}
-
-function renderBossQ(){
-  bossAnswered=false;
-  if(bossQIdx>=BOSS_QS.length){showEnding();return;}
-  const q=BOSS_QS[bossQIdx];
-  document.getElementById('boss-q').textContent = q.q;
-  const grid=document.getElementById('boss-choices');
+function startRelicRound(){relicIdx=0;show('relic-screen');renderRelicBag();renderRelicQ();}
+function renderRelicQ(){
+  relicAnswered=false;pendingChests=null;
+  if(relicIdx>=relicQs.length){startRaid();return;}
+  document.getElementById('relic-hud-name').textContent=playerName;
+  document.getElementById('relic-progress').textContent=`유물 ${relicIdx+1}/${relicQs.length}`;
+  updateAtkDisplays();
+  document.getElementById('relic-q-card').style.display='block';
+  document.getElementById('chest-area').style.display='none';
+  const q=relicQs[relicIdx];
+  document.getElementById('relic-q').textContent=q.q;
+  const grid=document.getElementById('relic-choices');
   grid.innerHTML=q.choices.map((c,i)=>`
-    <button class="boss-choice" onclick="bossChoose(${i})">
+    <button class="boss-choice" onclick="relicChoose(${i})">
       <span class="cnum">${['①','②','③','④'][i]}</span><span>${c}</span>
     </button>`).join('');
-  const fb=document.getElementById('boss-feedback');
-  fb.className='boss-feedback'; fb.style.display='none';
-  document.getElementById('boss-next-row').style.display='none';
+  const fb=document.getElementById('relic-feedback');fb.className='boss-feedback';fb.style.display='none';
+  document.getElementById('relic-next-row').style.display='none';
 }
-
-function bossChoose(idx){
-  if(bossAnswered)return;
-  bossAnswered=true;
-  const q=BOSS_QS[bossQIdx];
-  document.querySelectorAll('.boss-choice').forEach(b=>b.disabled=true);
+function relicChoose(idx){
+  if(relicAnswered)return;relicAnswered=true;
+  const q=relicQs[relicIdx];
+  document.querySelectorAll('#relic-choices .boss-choice').forEach(b=>b.disabled=true);
   const correct=idx===q.answer;
-  document.querySelectorAll('.boss-choice')[idx].classList.add(correct?'correct':'wrong');
-  if(!correct) document.querySelectorAll('.boss-choice')[q.answer].classList.add('correct');
-
-  const fb=document.getElementById('boss-feedback');
-  fb.style.display='block';
-
+  document.querySelectorAll('#relic-choices .boss-choice')[idx].classList.add(correct?'correct':'wrong');
+  if(!correct)document.querySelectorAll('#relic-choices .boss-choice')[q.answer].classList.add('correct');
+  const fb=document.getElementById('relic-feedback');fb.style.display='block';
   if(correct){
-    score+=5;
-    bossHp--;
-    sendAttack();
-    updateBossHpBar();
-    // Hit animation
-    const fig=document.getElementById('boss-fig');
-    fig.classList.remove('hit');
-    void fig.offsetWidth;
-    fig.classList.add('hit');
-    // Damage popup
-    showDamagePop();
-    if(bossHp<=0){
-      document.getElementById('boss-status').textContent='으악...! 패배했다...!';
-      fig.className='boss-fig dead';
-      fb.className='boss-feedback ok';
-      document.getElementById('boss-fb-title').textContent='💥 보스를 쓰러뜨렸다!';
-      document.getElementById('boss-fb-body').textContent=q.fb+'\n\n🏆 모든 미션 완료! 말의 왕국을 구했습니다!';
-      document.getElementById('boss-next-btn').textContent='🏆 결과 보기';
-      document.getElementById('boss-next-row').style.display='block';
-      return;
-    }
-    const hpPct=Math.round(bossHp/BOSS_TOTAL_HP*100);
-    const statuses=['크크...그 정도론 안 돼!','으음... 제법인데...!','이, 이럴 수가!','제발 멈춰라...!','으아악 더는 안 돼!'];
-    const si=Math.floor((1-bossHp/BOSS_TOTAL_HP)*statuses.length);
-    document.getElementById('boss-status').textContent=statuses[Math.min(si,statuses.length-1)];
-    fb.className='boss-feedback ok';
-    document.getElementById('boss-fb-title').textContent=`✅ 정답! 보스에게 💥 데미지! (남은 HP: ${bossHp})`;
-    document.getElementById('boss-fb-body').textContent=q.fb;
-  } else {
-    hp=Math.max(0,hp-1);
-    updateHpUI();
-    fb.className='boss-feedback ng';
-    document.getElementById('boss-fb-title').textContent='❌ 틀렸어요! 보스가 반격! ❤️ -1';
-    document.getElementById('boss-fb-body').textContent=q.fb;
-    document.getElementById('boss-status').textContent='크하하! 이게 진짜 실력이냐!';
-    if(hp<=0){
-      document.getElementById('boss-fb-body').textContent=q.fb+'\n\n💀 목숨을 다 잃었습니다... 하지만 도전은 계속!';
-      document.getElementById('boss-next-btn').textContent='📊 결과 보기';
-      document.getElementById('boss-next-row').style.display='block';
-      return;
-    }
-  }
-  document.getElementById('boss-next-row').style.display='block';
-  document.getElementById('boss-next-btn').textContent='다음 공격 →';
-}
-
-function showDamagePop(){
-  const arena=document.querySelector('.boss-arena');
-  const pop=document.createElement('div');
-  pop.className='damage-pop';
-  pop.textContent='💥 -1!';
-  arena.appendChild(pop);
-  setTimeout(()=>pop.remove(),750);
-}
-
-function nextBossQ(){
-  bossQIdx++;
-  if(bossHp<=0||hp<=0||bossQIdx>=BOSS_QS.length){
-    showEnding();
-  } else {
-    renderBossQ();
+    sfxCorrect();fb.className='boss-feedback ok';
+    document.getElementById('relic-fb-title').textContent='✅ 정답! 보물상자가 나타났다!';
+    document.getElementById('relic-fb-body').textContent=q.fb;
+    setTimeout(openChests,650);
+  }else{
+    sfxWrong();fb.className='boss-feedback ng';
+    document.getElementById('relic-fb-title').textContent='❌ 아쉬워요! 이번엔 유물이 없어요';
+    document.getElementById('relic-fb-body').textContent=q.fb;
+    document.getElementById('relic-next-row').style.display='block';
   }
 }
+function openChests(){
+  document.getElementById('relic-q-card').style.display='none';
+  const area=document.getElementById('chest-area');area.style.display='block';
+  document.getElementById('relic-reveal').style.display='none';
+  document.getElementById('chest-next-row').style.display='none';
+  pendingChests=[rollRelic(),rollRelic(),rollRelic()];
+  document.getElementById('chest-grid').innerHTML=pendingChests.map((_,i)=>`
+    <button class="chest" id="chest-${i}" onclick="pickChest(${i})">
+      <div class="chest-ico">🎁</div><div class="chest-lbl">상자 ${i+1}</div>
+    </button>`).join('');
+}
+function pickChest(i){
+  if(!pendingChests)return;
+  const picked=pendingChests[i];pendingChests=null;
+  myRelics.push(picked);relicATK+=picked.atk;updateAtkDisplays();
+  document.querySelectorAll('#chest-grid .chest').forEach((b,bi)=>{b.disabled=true;b.classList.add('opened');if(bi===i)b.classList.add('picked');});
+  const isLegend=picked.tier==='legend',isDud=picked.tier==='dud';
+  if(isLegend){sfxLegend();confetti(70);comboPop('⭐ 전설 ⭐');}
+  else if(isDud){sfxWrong();}
+  else sfxOpen();
+  const rev=document.getElementById('relic-reveal');rev.style.display='block';
+  rev.innerHTML=`
+    <div class="relic-reveal-card" style="--c:${picked.color};--g:${picked.glow}">
+      <div class="r-emoji">${picked.emoji}</div>
+      <div class="r-tier" style="background:${picked.color};color:#0a0814;">${picked.tierName}</div>
+      <div class="r-name">${picked.name}</div>
+      <div class="r-atk">${isDud?'공격력 +0 … 다음 기회에!':'⚔️ 공격력 +'+picked.atk}</div>
+    </div>`;
+  renderRelicBag();
+  document.getElementById('chest-next-row').style.display='block';
+}
+function renderRelicBag(){
+  const bag=document.getElementById('relic-bag');if(!bag)return;
+  if(!myRelics.length){bag.innerHTML='<span style="font-size:.74rem;color:var(--muted);">아직 모은 유물이 없어요</span>';return;}
+  bag.innerHTML=myRelics.map(r=>`<span class="relic-chip" style="--c:${r.color};--g:${r.glow}">${r.emoji} ${r.name}${r.atk?` <b style="color:var(--pink)">+${r.atk}</b>`:''}</span>`).join('');
+}
+function nextRelicQ(){relicIdx++;renderRelicQ();}
 
 // ══════════════════════════════════════════════
-//  ENDING + RANKING
+//  RAID (레이드 보스)
+// ══════════════════════════════════════════════
+function startRaid(){
+  raidIdx=0;combo=0;localBossHp=LOCAL_BOSS_HP;
+  if(NET.enabled&&NET.connected)netInitBoss(ROOM_BOSS_HP);
+  show('boss-screen');
+  document.getElementById('boss-hud-name').textContent=playerName;
+  document.getElementById('boss-label').textContent='⚔️ 레이드 보스';
+  document.getElementById('boss-name').textContent='👹 어둠의 대마왕';
+  document.getElementById('boss-fig').textContent='👹';
+  document.getElementById('boss-fig').className='boss-fig';
+  document.getElementById('boss-status').textContent='크크크... 모두 덤벼라!';
+  document.getElementById('dmg-disp').textContent=myDamage;
+  updateAtkDisplays();updateComboBadge();updateRaidHpBar();renderRaidQ();
+}
+function updateComboBadge(){
+  const b=document.getElementById('combo-badge');if(!b)return;
+  if(combo>=2){b.style.display='';document.getElementById('combo-disp').textContent=combo;}
+  else b.style.display='none';
+}
+function raidMaxHp(){return (NET.enabled&&NET.connected)?ROOM_BOSS_HP:LOCAL_BOSS_HP;}
+function raidCurHp(){
+  if(NET.enabled&&NET.connected)return (typeof NET.sharedBossHp==='number')?NET.sharedBossHp:ROOM_BOSS_HP;
+  return localBossHp;
+}
+function updateRaidHpBar(){
+  const max=raidMaxHp(),cur=Math.max(0,raidCurHp());
+  const pct=Math.max(0,Math.min(100,cur/max*100));
+  document.getElementById('boss-hp-fill').style.width=pct+'%';
+  document.getElementById('boss-hp-text').textContent=Math.round(pct)+'%';
+  if(cur<=0){
+    const fig=document.getElementById('boss-fig');
+    if(fig&&!fig.classList.contains('dead')){fig.className='boss-fig dead';document.getElementById('boss-status').textContent='으아악...! 쓰러진다...!';confetti(60);}
+  }
+}
+function renderRaidQ(){
+  raidAnswered=false;
+  if(raidIdx>=raidQs.length){showEnding();return;}
+  document.getElementById('raid-progress').textContent=`공격 ${raidIdx+1}/${raidQs.length}`;
+  const q=raidQs[raidIdx];
+  document.getElementById('boss-q').textContent=q.q;
+  const grid=document.getElementById('boss-choices');
+  grid.innerHTML=q.choices.map((c,i)=>`
+    <button class="boss-choice" onclick="raidChoose(${i})">
+      <span class="cnum">${['①','②','③','④'][i]}</span><span>${c}</span>
+    </button>`).join('');
+  const fb=document.getElementById('boss-feedback');fb.className='boss-feedback';fb.style.display='none';
+  document.getElementById('boss-next-row').style.display='none';
+}
+function raidChoose(idx){
+  if(raidAnswered)return;raidAnswered=true;
+  const q=raidQs[raidIdx];
+  document.querySelectorAll('#boss-choices .boss-choice').forEach(b=>b.disabled=true);
+  const correct=idx===q.answer;
+  document.querySelectorAll('#boss-choices .boss-choice')[idx].classList.add(correct?'correct':'wrong');
+  if(!correct)document.querySelectorAll('#boss-choices .boss-choice')[q.answer].classList.add('correct');
+  const fb=document.getElementById('boss-feedback');fb.style.display='block';
+  if(correct){
+    combo++;bestCombo=Math.max(bestCombo,combo);
+    const mult=1+(combo-1)*0.15;
+    const dmg=Math.round((BASE_DMG+totalATK())*mult);
+    myDamage+=dmg;
+    document.getElementById('dmg-disp').textContent=myDamage;
+    localBossHp=Math.max(0,localBossHp-dmg);
+    if(NET.enabled&&NET.connected)netRaidDamage(dmg,myDamage);
+    sfxHit();
+    const fig=document.getElementById('boss-fig');fig.classList.remove('hit');void fig.offsetWidth;fig.classList.add('hit');
+    raidDamagePop(dmg);updateRaidHpBar();updateComboBadge();
+    if(combo>=3)comboPop(`🔥 ${combo} COMBO!`);
+    fb.className='boss-feedback ok';
+    document.getElementById('boss-fb-title').textContent=`✅ 정답! 💥 ${dmg} 데미지!${combo>=2?` (🔥${combo}콤보 x${mult.toFixed(2)})`:''}`;
+    document.getElementById('boss-fb-body').textContent=q.fb;
+    document.getElementById('boss-status').textContent=raidTaunt();
+  }else{
+    combo=0;updateComboBadge();sfxWrong();
+    fb.className='boss-feedback ng';
+    document.getElementById('boss-fb-title').textContent='❌ 빗나갔다! (콤보 끊김)';
+    document.getElementById('boss-fb-body').textContent=q.fb;
+    document.getElementById('boss-status').textContent='크하하! 그 정도냐!';
+  }
+  document.getElementById('boss-next-row').style.display='block';
+  document.getElementById('boss-next-btn').textContent=(raidIdx>=raidQs.length-1)?'🏆 결과 보기':'다음 공격 →';
+}
+function raidTaunt(){
+  const t=['으윽...! 제법이구나!','이, 이게 무슨 힘이지?!','크윽... 멈춰라!','더는... 안 돼!','우리 반은 강하다...!'];
+  return t[Math.floor(Math.random()*t.length)];
+}
+function raidDamagePop(dmg){
+  const arena=document.querySelector('#boss-screen .boss-arena');if(!arena)return;
+  const pop=document.createElement('div');pop.className='damage-pop';pop.textContent='💥 '+dmg;
+  arena.appendChild(pop);setTimeout(()=>pop.remove(),750);
+}
+function nextBossQ(){raidIdx++;if(raidIdx>=raidQs.length)showEnding();else renderRaidQ();}
+
+// ══════════════════════════════════════════════
+//  ENDING
 // ══════════════════════════════════════════════
 function showEnding(){
   stopTimer();
-  saveScore();
-  broadcastScore();
+  recordRaid(getActiveRoomId(),playerName,myDamage);
+  if(NET.enabled&&NET.connected)netRaidDamage(0,myDamage);
   show('ending-screen');
-
-  const stageScore = Math.min(stage,9)*10;
-  const bossScore = (BOSS_TOTAL_HP-Math.max(bossHp,0))*5;
-  const total = score; // already accumulated
-
-  let emoji,title,sub,badge,badgeStyle;
-  if(bossHp<=0){
-    emoji='🏆';title='말의 왕국을 구했다!';
-    sub='9품사의 힘으로 어둠의 대마왕을 완전히 쓰러뜨렸습니다!\n반에서 가장 뛰어난 언어 대마법사!';
-    badge='🥇 언어 대마법사';badgeStyle='background:linear-gradient(135deg,#ffd166,#ff6b9d);color:#0a0814;';
-  } else if(score>=60){
-    emoji='⚔️';title='영웅이 되었다!';
-    sub='훌륭한 활약으로 왕국에 빛을 가져왔습니다!\n보스를 끝까지 쓰러뜨려봐요!';
-    badge='🥈 문법 기사';badgeStyle='background:linear-gradient(135deg,#9b5de5,#5c1fa8);color:#fff;';
-  } else if(score>=30){
-    emoji='🌱';title='모험은 계속된다!';
-    sub='용감하게 싸웠지만 아직 갈 길이 남아있어요.\n9품사를 복습하고 다시 도전!';
-    badge='🥉 견습 마법사';badgeStyle='background:#2a2250;color:var(--muted);';
-  } else {
-    emoji='📚';title='공부가 필요해요!';
-    sub='9품사 사전을 다시 펼쳐보세요.\n다시 도전하면 반드시 이길 수 있어요!';
-    badge='📖 국어 탐험가';badgeStyle='background:#2a2250;color:var(--muted);';
-  }
-
+  let emoji,title,sub,badge,bs;
+  if(myDamage>=1200){emoji='🏆';title='최강의 용사!';sub=`총 ${myDamage} 데미지로 보스를 압도했어요!\n반 최고의 언어 용사!`;badge='🥇 전설의 용사';bs='background:linear-gradient(135deg,#ffd166,#ff6b9d);color:#0a0814;';}
+  else if(myDamage>=600){emoji='⚔️';title='멋진 활약!';sub='강력한 공격으로 보스를 몰아붙였어요!';badge='🥈 용맹한 전사';bs='background:linear-gradient(135deg,#9b5de5,#5c1fa8);color:#fff;';}
+  else if(myDamage>=200){emoji='🌱';title='잘 싸웠어요!';sub='유물을 더 모으면 더 센 공격을 할 수 있어요!';badge='🥉 견습 모험가';bs='background:#2a2250;color:var(--muted);';}
+  else{emoji='📚';title='다음엔 더 잘할 수 있어요!';sub='문제를 많이 맞히면 공격력이 올라가요!';badge='📖 새내기 모험가';bs='background:#2a2250;color:var(--muted);';}
   document.getElementById('end-emoji').textContent=emoji;
   document.getElementById('end-title').textContent=title;
   document.getElementById('end-sub').textContent=sub;
-  document.getElementById('end-score-big').textContent=score+'점';
-  const gb=document.getElementById('end-badge');
-  gb.textContent=badge;gb.style.cssText=badgeStyle;
+  document.getElementById('end-score-big').textContent=Number(myDamage).toLocaleString();
+  const gb=document.getElementById('end-badge');gb.textContent=badge;gb.style.cssText=bs;
+  const er=document.getElementById('end-relics');
+  er.innerHTML=myRelics.length?myRelics.map(r=>`<span class="relic-chip" style="--c:${r.color};--g:${r.glow}">${r.emoji} ${r.name}${r.atk?` <b style="color:var(--pink)">+${r.atk}</b>`:''}</span>`).join(''):'';
+  const data=currentRankData();
+  const pos=data.findIndex(r=>r.name===playerName);
+  const line=document.getElementById('end-rank-line');
+  if(pos>=0)line.textContent=`현재 ${pos+1}등 / ${data.length}명 · ⚔️ 최종 공격력 ${totalATK()} · 🔥 최고 ${bestCombo}콤보`;
+  else line.textContent=`⚔️ 최종 공격력 ${totalATK()} · 🔥 최고 ${bestCombo}콤보`;
+  if(pos===0&&myDamage>0)confetti(60);
 }
 
-// ── Rooms + Ranking (localStorage) ──
-const RANK_KEY='pumsa_ranking_v2';           // (구버전) 전체 공용 랭킹 키 — 기본 방으로 이전
-const ROOMS_KEY='pumsa_rooms_v1';            // 방 목록
-const ACTIVE_ROOM_KEY='pumsa_active_room_v1';// 현재 선택된 방 id
-const DEFAULT_ROOM={id:'default',name:'기본 방'};
-
-// 방별 랭킹 키 (방마다 따로 저장)
-function rankKeyFor(roomId){return RANK_KEY+'::'+roomId;}
+// ══════════════════════════════════════════════
+//  ROOMS (localStorage)
+// ══════════════════════════════════════════════
+const ROOMS_KEY='pumsa_rooms_v1';
+const ACTIVE_ROOM_KEY='pumsa_active_room_v1';
+const RAID_RANK_KEY='pumsa_raidrank_v1';
+const HOST_ROOMS_KEY='pumsa_host_rooms';
+function raidKeyFor(roomId){return RAID_RANK_KEY+'::'+roomId;}
 function loadRooms(){try{return JSON.parse(localStorage.getItem(ROOMS_KEY)||'[]');}catch{return[];}}
-function saveRooms(rooms){localStorage.setItem(ROOMS_KEY,JSON.stringify(rooms));}
-function getActiveRoomId(){return localStorage.getItem(ACTIVE_ROOM_KEY)||DEFAULT_ROOM.id;}
+function saveRooms(r){localStorage.setItem(ROOMS_KEY,JSON.stringify(r));}
+function getActiveRoomId(){return localStorage.getItem(ACTIVE_ROOM_KEY)||'';}
 function setActiveRoomId(id){localStorage.setItem(ACTIVE_ROOM_KEY,id);updateRoomBadge();}
-// 현재 입장한(코드로 들어온) 방. 없으면 null
 function activeJoinedRoom(){return loadRooms().find(x=>x.id===getActiveRoomId())||null;}
 function hasJoinedRoom(){return !!activeJoinedRoom();}
-function currentRoomName(){
-  const r=activeJoinedRoom();
-  return r?r.name:'(입장 전)';
-}
+function currentRoomName(){const r=activeJoinedRoom();return r?r.name:'(입장 전)';}
+function currentRoomCode(){const r=activeJoinedRoom();return r&&r.code?r.code:'—';}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function loadHostRooms(){try{return JSON.parse(localStorage.getItem(HOST_ROOMS_KEY)||'[]');}catch{return[];}}
+function addHostRoom(code){const a=loadHostRooms();if(!a.includes(code)){a.push(code);localStorage.setItem(HOST_ROOMS_KEY,JSON.stringify(a));}}
+function isHostCode(code){return loadHostRooms().includes(code);}
+function isHostOfActive(){const r=activeJoinedRoom();return !!(r&&r.code&&isHostCode(r.code));}
 function initRooms(){
-  // 방은 선생님이 만들고, 학생은 코드로 입장. 기본 방을 자동 생성하지 않는다.
-  let rooms=loadRooms();
-  let updated=false;
+  let rooms=loadRooms(),updated=false;
   rooms.forEach(r=>{if(!r.code){r.code=generateCode();updated=true;}});
   if(updated)saveRooms(rooms);
   updateRoomBadge();
 }
 function updateRoomBadge(){
-  const el=document.getElementById('title-room');
-  if(!el)return;
-  if(hasJoinedRoom()) el.textContent='🚪 '+currentRoomName()+' ['+currentRoomCode()+']';
+  const el=document.getElementById('title-room');if(!el)return;
+  if(hasJoinedRoom())el.textContent='🚪 '+currentRoomName()+' ['+currentRoomCode()+']';
   else el.textContent='🚪 방에 입장하세요';
 }
-
-// 엔딩 화면과 랭킹 화면이 동일한 등급 규칙을 쓰도록 공통화
-function gradeName(score, bossDefeated){
-  if(bossDefeated) return '언어 대마법사';
-  if(score>=60) return '문법 기사';
-  if(score>=30) return '견습 마법사';
-  return '국어 탐험가';
-}
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-// 현재 방 기준으로 랭킹 읽기/쓰기
-function loadRanking(){try{return JSON.parse(localStorage.getItem(rankKeyFor(getActiveRoomId()))||'[]');}catch{return[];}}
-function saveRanking(data){localStorage.setItem(rankKeyFor(getActiveRoomId()),JSON.stringify(data));}
-
-// ── Room codes ──
 const CODE_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 function generateCode(){
-  const rooms=loadRooms();
-  const existing=new Set(rooms.map(r=>r.code));
-  let code;
-  do{code='';for(let i=0;i<4;i++)code+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];}while(existing.has(code));
+  const ex=new Set(loadRooms().map(r=>r.code));let code;
+  do{code='';for(let i=0;i<4;i++)code+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];}while(ex.has(code));
   return code;
 }
-
-// ── Teacher password ──
-const TEACHER_PW_KEY='pumsa_teacher_pw';
-let teacherUnlocked=false;
-function getTeacherPw(){return localStorage.getItem(TEACHER_PW_KEY);}
-function setTeacherPw(pw){localStorage.setItem(TEACHER_PW_KEY,pw);}
-function unlockTeacher(){
-  const input=document.getElementById('teacher-pw-input');
-  const pw=input.value.trim();
-  const errEl=document.getElementById('teacher-pw-error');
-  if(!pw){errEl.textContent='비밀번호를 입력하세요';errEl.style.display='block';input.focus();return;}
-  const saved=getTeacherPw();
-  if(!saved){
-    setTeacherPw(pw);
-    teacherUnlocked=true;
-    refreshTeacherUI();
-    return;
-  }
-  if(pw!==saved){errEl.textContent='비밀번호가 틀렸어요';errEl.style.display='block';input.focus();return;}
-  teacherUnlocked=true;
-  refreshTeacherUI();
-}
-function refreshTeacherUI(){
-  document.getElementById('teacher-lock').style.display=teacherUnlocked?'none':'block';
-  document.getElementById('teacher-unlocked').style.display=teacherUnlocked?'block':'none';
-  document.getElementById('teacher-pw-error').style.display='none';
-  document.getElementById('teacher-pw-input').value='';
-  renderRooms();
-}
-function resetTeacherPw(){
-  const newPw=prompt('새 선생님 비밀번호를 입력하세요');
-  if(newPw&&newPw.trim()){setTeacherPw(newPw.trim());alert('비밀번호가 변경되었어요!');}
+function upsertLocalRoom(code,name){
+  const rooms=loadRooms();let room=rooms.find(r=>r.code===code);
+  if(!room){room={id:'r'+Date.now().toString(36)+Math.floor(Math.random()*999),name:name||('방 '+code),code};rooms.push(room);}
+  else if(name)room.name=name;
+  saveRooms(rooms);return room;
 }
 
-// ── Room screen ──
+// ── Raid ranking (오프라인 폴백) ──
+function recordRaid(roomId,name,damage){
+  if(!roomId)return;
+  let data;try{data=JSON.parse(localStorage.getItem(raidKeyFor(roomId))||'[]');}catch{data=[];}
+  const i=data.findIndex(r=>r.name===name);
+  if(i>=0){if(damage>data[i].damage)data[i].damage=damage;}
+  else data.push({name,damage});
+  data.sort((a,b)=>b.damage-a.damage);
+  localStorage.setItem(raidKeyFor(roomId),JSON.stringify(data.slice(0,50)));
+}
+function loadRaidLocal(roomId){try{return JSON.parse(localStorage.getItem(raidKeyFor(roomId))||'[]');}catch{return[];}}
+function currentRankData(){
+  let data=(NET.enabled&&NET.liveRank)?NET.liveRank.slice():loadRaidLocal(getActiveRoomId());
+  data.sort((a,b)=>b.damage-a.damage);return data;
+}
+function goRanking(){renderRanking();show('rank-screen');}
+function showFinalRanking(){renderRanking();show('rank-screen');}
+function renderRanking(){
+  const data=currentRankData();
+  const rn=document.getElementById('rank-roomname');
+  if(rn)rn.textContent='🚪 '+currentRoomName()+' · 💥 데미지 랭킹';
+  const medals=['🥇','🥈','🥉'];
+  const avatars=['🧙','🧝','🧚','🦸','🧜','🧞','🦹','🧟','🧛','🧌'];
+  if(!data.length){document.getElementById('rank-list').innerHTML='<div class="rank-empty">아직 기록이 없어요!<br>레이드를 끝내면 데미지가 등록돼요 ⚔️</div>';return;}
+  document.getElementById('rank-list').innerHTML=data.map((r,i)=>`
+    <div class="rank-item ${i<3?'rank-'+(i+1):''}">
+      <div class="rank-pos">${medals[i]||('#'+(i+1))}</div>
+      <div class="rank-avatar">${avatars[i%avatars.length]}</div>
+      <div class="rank-info">
+        <div class="rank-pname">${escapeHtml(r.name)}</div>
+        <div class="rank-grade">💥 ${Number(r.damage||0).toLocaleString()} 데미지</div>
+      </div>
+      <div class="rank-pts">${i<3?'TOP'+(i+1):''}</div>
+    </div>`).join('');
+}
+function clearRanking(){
+  if(!confirm(`"${currentRoomName()}" 방의 데미지 랭킹을 초기화할까요?`))return;
+  localStorage.removeItem(raidKeyFor(getActiveRoomId()));
+  if(NET.enabled&&NET.connected){netClearRank();NET.liveRank=[];}
+  renderRanking();
+}
+
+// ══════════════════════════════════════════════
+//  ROOM SCREEN
+// ══════════════════════════════════════════════
 function showRoomScreen(){
   document.getElementById('room-code-input').value='';
   document.getElementById('room-code-error').style.display='none';
-  if(document.getElementById('room-created-result'))document.getElementById('room-created-result').style.display='none';
-  refreshTeacherUI();
-  renderRooms();
-  show('room-screen');
+  const rc=document.getElementById('room-created-result');if(rc)rc.style.display='none';
+  renderRooms();updateNetStatus();show('room-screen');
 }
 function createRoom(){
-  if(!teacherUnlocked)return;
   const input=document.getElementById('room-name-input');
   const name=input.value.trim();
   if(!name){input.focus();return;}
@@ -1096,13 +1254,14 @@ function createRoom(){
   if(rooms.some(r=>r.name===name)){alert('같은 이름의 방이 이미 있어요!');return;}
   const code=generateCode();
   const id='r'+Date.now().toString(36);
-  rooms.push({id,name,code});
-  saveRooms(rooms);
+  rooms.push({id,name,code});saveRooms(rooms);
+  addHostRoom(code);
   setActiveRoomId(id);
+  netCreateRoom(code,name);netBind(code);netResetState();
   input.value='';
   const result=document.getElementById('room-created-result');
   result.style.display='block';
-  result.innerHTML=`<div class="room-code-display"><div style="font-size:.8rem;color:var(--green);font-weight:700;margin-bottom:.3rem;">✅ 방이 만들어졌어요!</div><div class="room-code-big">${code}</div><div class="room-code-hint">이 코드를 학생들에게 알려주세요</div></div>`;
+  result.innerHTML=`<div class="room-code-display"><div style="font-size:.8rem;color:var(--green);font-weight:700;margin-bottom:.3rem;">✅ 방이 만들어졌어요! (선생님)</div><div class="room-code-big">${code}</div><div class="room-code-hint">이 코드를 학생들에게 알려주세요</div></div>`;
   renderRooms();
 }
 function joinByCode(){
@@ -1110,280 +1269,147 @@ function joinByCode(){
   const code=input.value.trim().toUpperCase();
   const errEl=document.getElementById('room-code-error');
   if(!code||code.length!==4){errEl.textContent='4자리 코드를 입력하세요';errEl.style.display='block';input.focus();return;}
-  const rooms=loadRooms();
-  let room=rooms.find(r=>r.code===code);
-  // 이 기기에 방이 없어도, 코드만 맞으면 입장(로컬에 방 생성).
-  // 선생님이 다른 기기에서 만든 방에도 코드로 들어올 수 있게 함.
-  if(!room){
-    room={id:'r'+Date.now().toString(36),name:'방 '+code,code};
-    rooms.push(room);
-    saveRooms(rooms);
-  }
   errEl.style.display='none';
-  setActiveRoomId(room.id);
-  input.value='';
-  renderRooms();
-}
-function enterRoom(id){setActiveRoomId(id);renderRooms();}
-function deleteRoom(id){
-  if(!teacherUnlocked)return;
-  const rooms=loadRooms();
-  const room=rooms.find(r=>r.id===id);
-  if(!room)return;
-  if(!confirm(`"${room.name}" 방과 그 방의 랭킹을 삭제할까요?`))return;
-  const left=rooms.filter(r=>r.id!==id);
-  localStorage.removeItem(rankKeyFor(id));
-  saveRooms(left);
-  if(getActiveRoomId()===id){
-    if(left.length) setActiveRoomId(left[0].id);
-    else { localStorage.removeItem(ACTIVE_ROOM_KEY); updateRoomBadge(); }
+  function finishJoin(name){
+    const room=upsertLocalRoom(code,name);
+    setActiveRoomId(room.id);
+    if(NET.enabled)netBind(code);
+    input.value='';renderRooms();
   }
+  if(NET.enabled){
+    netRoomExists(code).then(res=>{
+      if(res&&res.exists===false){errEl.textContent='그런 방 코드가 없어요. 선생님께 확인하세요!';errEl.style.display='block';return;}
+      finishJoin((res&&res.name)||('방 '+code));
+    });
+  }else finishJoin('방 '+code);
+}
+function enterRoom(id){
+  setActiveRoomId(id);
+  const r=activeJoinedRoom();
+  if(r&&r.code&&NET.enabled)netBind(r.code);
   renderRooms();
 }
-function currentRoomCode(){
-  const r=activeJoinedRoom();
-  return r&&r.code?r.code:'—';
+function deleteRoom(id){
+  const rooms=loadRooms();const room=rooms.find(r=>r.id===id);if(!room)return;
+  if(!confirm(`"${room.name}" 방을 목록에서 지울까요?`))return;
+  const left=rooms.filter(r=>r.id!==id);
+  localStorage.removeItem(raidKeyFor(id));
+  saveRooms(left);
+  if(getActiveRoomId()===id){if(left.length)setActiveRoomId(left[0].id);else{localStorage.removeItem(ACTIVE_ROOM_KEY);updateRoomBadge();}}
+  renderRooms();
 }
 function renderRooms(){
-  const rooms=loadRooms();
-  const activeId=getActiveRoomId();
-  const joined=hasJoinedRoom();
-  // 입장한 방이 있을 때: 선생님은 시작 버튼, 학생은 대기 화면
+  const rooms=loadRooms();const activeId=getActiveRoomId();const joined=hasJoinedRoom();
   const startSec=document.getElementById('room-start-section');
-  const startTeacher=document.getElementById('room-start-teacher');
-  const startStudent=document.getElementById('room-start-student');
-  if(startSec){
-    if(joined){
-      startSec.style.display='block';
-      startTeacher.style.display=teacherUnlocked?'block':'none';
-      startStudent.style.display=teacherUnlocked?'none':'block';
-    } else {
-      startSec.style.display='none';
-    }
+  if(startSec)startSec.style.display=joined?'block':'none';
+  if(joined){
+    const online=NET.enabled;const host=isHostOfActive();
+    const hostEl=document.getElementById('room-start-host');
+    const studEl=document.getElementById('room-start-student');
+    const soloEl=document.getElementById('room-start-solo');
+    if(hostEl)hostEl.style.display=(online&&host)?'block':'none';
+    if(studEl)studEl.style.display=(online&&!host)?'block':'none';
+    if(soloEl)soloEl.style.display=(!online)?'block':'none';
   }
   const activeRoom=activeJoinedRoom();
+  const rcur=document.getElementById('room-current');
   if(joined){
     const codeDisp=activeRoom.code?` · 코드: <b style="font-family:monospace;letter-spacing:.1em;">${activeRoom.code}</b>`:'';
-    document.getElementById('room-current').innerHTML=`현재 방: <b>${escapeHtml(currentRoomName())}</b>${codeDisp}<br><span style="font-size:.75rem;color:var(--muted);">이 방에서 플레이한 점수가 이 방 랭킹에 기록돼요</span>`;
-  } else {
-    document.getElementById('room-current').innerHTML=`<span style="color:var(--muted);">아직 입장한 방이 없어요.<br>선생님이 알려준 <b style="color:var(--cyan);">방 코드 4자리</b>를 입력해 입장하세요!</span>`;
+    const roleTag=isHostOfActive()?' <span style="color:var(--purple);font-weight:700;">(선생님/방장)</span>':'';
+    rcur.innerHTML=`현재 방: <b>${escapeHtml(currentRoomName())}</b>${codeDisp}${roleTag}`;
+  }else{
+    rcur.innerHTML=`<span style="color:var(--muted);">아직 입장한 방이 없어요.<br>선생님이 알려준 <b style="color:var(--cyan);">방 코드 4자리</b>를 입력해 입장하세요!</span>`;
   }
   document.getElementById('room-list').innerHTML=rooms.map(r=>{
-    const cnt=(()=>{try{return JSON.parse(localStorage.getItem(rankKeyFor(r.id))||'[]').length;}catch{return 0;}})();
     const active=r.id===activeId&&joined;
     return `<div class="room-item${active?' active':''}">
       <div class="room-item-info">
         <div class="room-item-name">🚪 ${escapeHtml(r.name)}</div>
-        <div class="room-item-code">${r.code||'—'} · ${cnt}명${active?' · 현재':''}
-        </div>
+        <div class="room-item-code">${r.code||'—'}${active?' · 현재':''}${isHostCode(r.code)?' · 방장':''}</div>
       </div>
       <div class="room-item-btns">
         ${active?'<button class="room-mini cur">현재</button>':`<button class="room-mini enter" onclick="enterRoom('${r.id}')">입장</button>`}
-        ${teacherUnlocked?`<button class="room-mini del" onclick="deleteRoom('${r.id}')">🗑️</button>`:''}
+        <button class="room-mini del" onclick="deleteRoom('${r.id}')">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
-// 방을 지정해 점수 기록 (학생 자신의 기록 + 선생님 화면 집계 공용)
-function recordScore(roomId,name,score,grade){
-  let data;try{data=JSON.parse(localStorage.getItem(rankKeyFor(roomId))||'[]');}catch{data=[];}
-  const i=data.findIndex(r=>r.name===name);
-  if(i>=0){if(score>data[i].score){data[i].score=score;data[i].grade=grade;}}
-  else{data.push({name,score,grade});}
-  data.sort((a,b)=>b.score-a.score);
-  localStorage.setItem(rankKeyFor(roomId),JSON.stringify(data.slice(0,20)));
-}
-function saveScore(){
-  recordScore(getActiveRoomId(),playerName,score,gradeName(score,bossHp<=0));
-}
-function goRanking(){renderRanking();show('rank-screen');}
-function renderRanking(){
-  const data=loadRanking();
-  const rn=document.getElementById('rank-roomname');
-  if(rn) rn.textContent='🚪 '+currentRoomName()+' · 우리 반 최고 모험가';
-  const medals=['🥇','🥈','🥉'];
-  // 저장된 등급이 있으면 그대로, 옛 기록은 점수 기준으로 보정
-  const grades=(r)=>r.grade||gradeName(r.score,false);
-  const avatars=['🧙','🧝','🧚','🦸','🧜','🧞','🦹','🧟','🧛','🧌'];
-  if(!data.length){
-    document.getElementById('rank-list').innerHTML='<div class="rank-empty">아직 기록이 없어요!<br>첫 번째 모험가가 되어보세요 ⚔️</div>';
-    return;
-  }
-  document.getElementById('rank-list').innerHTML=data.map((r,i)=>`
-    <div class="rank-item ${i<3?'rank-'+(i+1):''}">
-      <div class="rank-pos">${medals[i]||('#'+(i+1))}</div>
-      <div class="rank-avatar">${avatars[i%avatars.length]}</div>
-      <div class="rank-info">
-        <div class="rank-pname">${escapeHtml(r.name)}</div>
-        <div class="rank-grade">${grades(r)}</div>
-      </div>
-      <div class="rank-pts">${r.score}점</div>
-    </div>`).join('');
-}
-function clearRanking(){if(confirm(`"${currentRoomName()}" 방의 랭킹을 초기화할까요?`)){saveRanking([]);renderRanking();}}
 
 // ══════════════════════════════════════════════
-//  PvP 방해 공격 (같은 방끼리 실시간 방해)
-//  - 같은 브라우저의 여러 탭/창 사이에서 작동 (서버 없음)
-//  - 정답을 맞히면 같은 방에서 문제 푸는 친구 화면에 방해가 날아감
+//  NET (Firebase 실시간 백엔드)
 // ══════════════════════════════════════════════
-const ATTACK_BUS_KEY='pumsa_attack_bus';
-const ATTACK_TYPES=['shake','fog','blur','flip','shuffle'];
-const ATTACK_LABELS={shake:'화면 흔들기 🫨',fog:'먹물 뿌리기 🌑',blur:'글자 흐리기 🌫️',flip:'화면 뒤집기 🙃',shuffle:'선택지 섞기 🔀'};
-let attackChannel=null;
-
-function initAttackChannel(){
+const NET={enabled:false,connected:false,db:null,code:null,clientId:null,liveRank:null,sharedBossHp:null,refs:[]};
+function safeKey(s){return String(s).replace(/[.#$\[\]\/]/g,'_').slice(0,40)||'_';}
+function initNet(){
   try{
-    attackChannel=new BroadcastChannel('pumsa_room_attacks');
-    attackChannel.onmessage=(e)=>handleIncomingAttack(e.data);
-  }catch(_){ attackChannel=null; }
-  // storage 이벤트 폴백 (같은 브라우저의 다른 탭)
-  window.addEventListener('storage',(e)=>{
-    if(e.key===ATTACK_BUS_KEY && e.newValue){
-      try{ handleIncomingAttack(JSON.parse(e.newValue)); }catch(_){}
-    }
-  });
+    if(!FIREBASE_CONFIG||!FIREBASE_CONFIG.databaseURL||typeof firebase==='undefined'){updateNetStatus();return;}
+    firebase.initializeApp(FIREBASE_CONFIG);
+    NET.db=firebase.database();
+    NET.clientId='c'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+    NET.enabled=true;
+    NET.db.ref('.info/connected').on('value',s=>{
+      NET.connected=!!s.val();updateNetStatus();
+      if(document.getElementById('room-screen').classList.contains('active'))renderRooms();
+    });
+  }catch(e){NET.enabled=false;}
+  updateNetStatus();
 }
-function handleIncomingAttack(msg){
-  if(!msg||typeof msg!=='object')return;
-  if(msg.roomId!==getActiveRoomId())return;     // 같은 방만
-  if(msg.from===playerName)return;              // 내 공격은 무시
-  if(Date.now()-(msg.ts||0)>5000)return;        // 오래된 메시지 무시
-  receiveAttack(msg.type, msg.from);
-}
-function broadcastAttack(type){
-  const msg={roomId:getActiveRoomId(),from:playerName,type,ts:Date.now()};
-  if(attackChannel){try{attackChannel.postMessage(msg);}catch(_){}}
-  try{localStorage.setItem(ATTACK_BUS_KEY,JSON.stringify(msg));}catch(_){}
-}
-function sendAttack(){
-  const type=ATTACK_TYPES[Math.floor(Math.random()*ATTACK_TYPES.length)];
-  broadcastAttack(type);
-}
-
-// 현재 문제를 풀고 있는 화면(게임/보스)의 컨테이너
-function activePlayContainer(){
-  if(document.getElementById('game-screen').classList.contains('active'))
-    return document.querySelector('#game-screen .game-body');
-  if(document.getElementById('boss-screen').classList.contains('active'))
-    return document.querySelector('#boss-screen .boss-wrap');
-  return null;
-}
-function receiveAttack(type, fromName){
-  // 문제를 풀고 있는 사람만 방해받음
-  if(!activePlayContainer())return;
-  showAttackToast(fromName, type);
-  applyFx(type);
-}
-function showAttackToast(from,type){
-  const t=document.createElement('div');
-  t.className='attack-toast';
-  t.textContent=`👾 ${from||'누군가'}의 방해 공격! ${ATTACK_LABELS[type]||''}`;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(),2400);
-}
-function applyFx(type){
-  const el=activePlayContainer();
-  if(!el)return;
-  if(type==='fog'){
-    const f=document.createElement('div');f.className='fx-fog';
-    document.body.appendChild(f);setTimeout(()=>f.remove(),2300);
-    return;
+function updateNetStatus(){
+  const el=document.getElementById('net-status');if(!el)return;
+  if(NET.enabled){
+    el.innerHTML=NET.connected?'🟢 온라인 — 다른 기기끼리 실시간 연결됨':'🟡 온라인 연결 중…';
+    el.style.color=NET.connected?'var(--green)':'var(--yellow)';
+  }else{
+    el.innerHTML='🟡 오프라인 모드 (같은 기기에서만)';
+    el.style.color='var(--muted)';
   }
-  if(type==='shuffle'){
-    const grid=el.querySelector('.choices, .boss-choices');
-    if(grid){
-      const items=[...grid.children];
-      for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}
-      items.forEach(n=>grid.appendChild(n));
-    }
-    el.classList.add('fx-shake');setTimeout(()=>el.classList.remove('fx-shake'),900);
-    return;
-  }
-  const cls= type==='blur'?'fx-blur' : type==='flip'?'fx-flip' : 'fx-shake';
-  const dur= type==='blur'?1800 : type==='flip'?1600 : 1700;
-  el.classList.add(cls);
-  setTimeout(()=>el.classList.remove(cls),dur);
+}
+function netCreateRoom(code,name){if(!NET.enabled)return;try{NET.db.ref('rooms/'+code+'/meta').update({name:name||('방 '+code),createdAt:firebase.database.ServerValue.TIMESTAMP});}catch(_){}}
+function netRoomExists(code){
+  if(!NET.enabled)return Promise.resolve(null);
+  return NET.db.ref('rooms/'+code+'/meta').get()
+    .then(s=>({exists:s.exists(),name:s.exists()?(s.val().name||('방 '+code)):null}))
+    .catch(()=>null);
+}
+function netBind(code){
+  if(!NET.enabled)return;netUnbind();NET.code=code;NET.sharedBossHp=null;
+  const rk=NET.db.ref('rooms/'+code+'/raid');
+  const rcb=snap=>{const arr=[];snap.forEach(ch=>{const v=ch.val();if(v&&typeof v.damage==='number')arr.push({name:v.name||'?',damage:v.damage});});arr.sort((a,b)=>b.damage-a.damage);NET.liveRank=arr;if(document.getElementById('rank-screen').classList.contains('active'))renderRanking();};
+  rk.on('value',rcb);NET.refs.push([rk,'value',rcb]);
+  const st=NET.db.ref('rooms/'+code+'/state');
+  const scb=snap=>{const v=snap.val();if(v&&v.phase==='play')onStartSignal();};
+  st.on('value',scb);NET.refs.push([st,'value',scb]);
+  const bh=NET.db.ref('rooms/'+code+'/bossHp');
+  const bcb=snap=>{const v=snap.val();if(typeof v==='number'){NET.sharedBossHp=v;if(document.getElementById('boss-screen').classList.contains('active'))updateRaidHpBar();}};
+  bh.on('value',bcb);NET.refs.push([bh,'value',bcb]);
+}
+function netUnbind(){NET.refs.forEach(a=>{try{a[0].off(a[1],a[2]);}catch(_){}});NET.refs=[];}
+function netResetState(){if(!NET.enabled||!NET.code)return;try{NET.db.ref('rooms/'+NET.code+'/state').set({phase:'lobby'});}catch(_){}}
+function netStartGame(){if(!NET.enabled||!NET.code)return;try{NET.db.ref('rooms/'+NET.code+'/state').set({phase:'play',startedAt:firebase.database.ServerValue.TIMESTAMP});}catch(_){}}
+function netInitBoss(maxHp){if(!NET.enabled||!NET.code)return;try{NET.db.ref('rooms/'+NET.code+'/bossHp').transaction(cur=>(typeof cur==='number'&&cur>0)?cur:maxHp);}catch(_){}}
+function netRaidDamage(dmg,total){
+  if(!NET.enabled||!NET.code)return;
+  if(dmg>0){try{NET.db.ref('rooms/'+NET.code+'/bossHp').transaction(cur=>(typeof cur==='number')?Math.max(0,cur-dmg):null);}catch(_){}}
+  try{NET.db.ref('rooms/'+NET.code+'/raid/'+safeKey(playerName)).update({name:playerName,damage:total,ts:Date.now()});}catch(_){}
+}
+function netClearRank(){if(!NET.enabled||!NET.code)return;try{NET.db.ref('rooms/'+NET.code+'/raid').remove();NET.db.ref('rooms/'+NET.code+'/bossHp').remove();NET.db.ref('rooms/'+NET.code+'/state').set({phase:'lobby'});}catch(_){}}
+function onStartSignal(){
+  if(isHostOfActive())return;
+  if(document.getElementById('room-screen').classList.contains('active'))goName();
+}
+function hostStartGame(){
+  if(!hasJoinedRoom())return;
+  if(NET.enabled&&NET.connected){netStartGame();const hn=document.getElementById('host-started-note');if(hn)hn.style.display='block';}
+  else goName();
 }
 
 // ══════════════════════════════════════════════
-//  선생님 게임 시작 신호 (같은 브라우저 탭 간 통신)
+//  INIT
 // ══════════════════════════════════════════════
-const GAME_START_BUS_KEY='pumsa_start_bus';
-let startChannel=null;
-
-function initStartChannel(){
-  try{
-    startChannel=new BroadcastChannel('pumsa_room_start');
-    startChannel.onmessage=(e)=>handleGameStart(e.data);
-  }catch(_){startChannel=null;}
-  window.addEventListener('storage',(e)=>{
-    if(e.key===GAME_START_BUS_KEY&&e.newValue){
-      try{handleGameStart(JSON.parse(e.newValue));}catch(_){}
-    }
-  });
-}
-function teacherStartGame(){
-  if(!teacherUnlocked||!hasJoinedRoom())return;
-  const msg={roomId:getActiveRoomId(),ts:Date.now(),action:'start'};
-  if(startChannel){try{startChannel.postMessage(msg);}catch(_){}}
-  try{localStorage.setItem(GAME_START_BUS_KEY,JSON.stringify(msg));}catch(_){}
-  goName();
-}
-function handleGameStart(msg){
-  if(!msg||typeof msg!=='object')return;
-  if(msg.action!=='start')return;
-  if(msg.roomId!==getActiveRoomId())return;
-  if(Date.now()-(msg.ts||0)>10000)return;
-  if(document.getElementById('room-screen').classList.contains('active')){
-    goName();
-  }
-}
-
-// ══════════════════════════════════════════════
-//  점수 집계 → 선생님 화면 최종 순위 발표
-//  - 학생이 게임을 끝내면 점수를 같은 방에 방송
-//  - 선생님 화면(같은 브라우저의 다른 탭/창)이 받아서 방 랭킹에 모음
-//  - 서버가 없으므로 같은 브라우저의 여러 탭/창 사이에서 작동
-// ══════════════════════════════════════════════
-const SCORE_BUS_KEY='pumsa_score_bus';
-let scoreChannel=null;
-function initScoreChannel(){
-  try{
-    scoreChannel=new BroadcastChannel('pumsa_room_scores');
-    scoreChannel.onmessage=(e)=>handleIncomingScore(e.data);
-  }catch(_){scoreChannel=null;}
-  window.addEventListener('storage',(e)=>{
-    if(e.key===SCORE_BUS_KEY&&e.newValue){
-      try{handleIncomingScore(JSON.parse(e.newValue));}catch(_){}
-    }
-  });
-}
-function broadcastScore(){
-  const msg={roomId:getActiveRoomId(),name:playerName,score,grade:gradeName(score,bossHp<=0),ts:Date.now()};
-  if(scoreChannel){try{scoreChannel.postMessage(msg);}catch(_){}}
-  try{localStorage.setItem(SCORE_BUS_KEY,JSON.stringify(msg));}catch(_){}
-}
-function handleIncomingScore(msg){
-  if(!msg||typeof msg!=='object')return;
-  if(typeof msg.score!=='number'||!msg.name||!msg.roomId)return;
-  recordScore(msg.roomId,msg.name,msg.score,msg.grade||gradeName(msg.score,false));
-  // 선생님이 순위 화면을 보는 중이면 실시간으로 새 점수 반영
-  if(document.getElementById('rank-screen').classList.contains('active')&&msg.roomId===getActiveRoomId()){
-    renderRanking();
-  }
-}
-// 선생님: 현재 방의 최종 순위 발표 화면으로
-function showFinalRanking(){
-  renderRanking();
-  show('rank-screen');
-}
-
-// 방 시스템 초기화
 initRooms();
-initAttackChannel();
-initStartChannel();
-initScoreChannel();
+initNet();
+(function(){const r=activeJoinedRoom();if(r&&r.code&&NET.enabled)netBind(r.code);})();
+
 </script>
 </body>
 </html>
