@@ -1215,7 +1215,7 @@ function showFinalRanking(){renderRanking();show('rank-screen');}
 function renderRanking(){
   const data=currentRankData();
   const rn=document.getElementById('rank-roomname');
-  if(rn)rn.textContent='🚪 '+currentRoomName()+' · 💥 데미지 랭킹';
+  if(rn)rn.textContent='🚪 '+currentRoomName()+' · 💥 데미지 랭킹'+((NET.enabled&&NET.connected)?' · 🔴 실시간':'');
   const medals=['🥇','🥈','🥉'];
   const avatars=['🧙','🧝','🧚','🦸','🧜','🧞','🦹','🧟','🧛','🧌'];
   if(!data.length){document.getElementById('rank-list').innerHTML='<div class="rank-empty">아직 기록이 없어요!<br>레이드를 끝내면 데미지가 등록돼요 ⚔️</div>';return;}
@@ -1399,8 +1399,12 @@ function onStartSignal(){
 }
 function hostStartGame(){
   if(!hasJoinedRoom())return;
-  if(NET.enabled&&NET.connected){netStartGame();const hn=document.getElementById('host-started-note');if(hn)hn.style.display='block';}
-  else goName();
+  if(NET.enabled&&NET.connected){
+    netStartGame();                 // 학생들에게 시작 신호
+    showFinalRanking();             // 선생님 화면은 실시간 순위로 전환 (교실 TV용)
+  }else{
+    goName();                       // 오프라인(같은 기기): 바로 플레이
+  }
 }
 
 // ══════════════════════════════════════════════
